@@ -18,7 +18,10 @@ services:
     volumes:
       - alvolo_data:/data
     ports:
-      - "127.0.0.1:8000:8000"
+      # Host port is configurable via APP_PORT in .env (default 8000). The container
+      # always listens on 8000 internally. Bound to 127.0.0.1 for use behind a reverse
+      # proxy; to expose it directly on every interface, drop the "127.0.0.1:" prefix.
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health').status==200 else 1)"]
       interval: 30s

@@ -103,6 +103,8 @@ cp .env.example .env
 docker compose up -d --build
 ```
 L'app gira su `127.0.0.1:8000`, con DB e immagini nel volume `alvolo_data` (persistente).
+Per usare un'altra porta, imposta `APP_PORT` nel `.env` (es. `APP_PORT=9090` → l'app sarà
+su `127.0.0.1:9090`). Il container resta sempre sulla 8000 internamente.
 
 **3. Reverse proxy + HTTPS** — scegli UNA delle due:
 
@@ -172,6 +174,7 @@ git pull && docker compose up -d --build
 | `CAPTURE_TOKEN` | _(vuoto)_ | vuoto ⇒ **auth disabilitata** (solo dev) |
 | `DATA_DIR` | `./data` | DB + uploads; in Docker = `/data` (volume) |
 | `WORKER_CONCURRENCY` | `2` | chiamate Claude in parallelo |
+| `APP_PORT` | `8000` | porta host pubblicata da docker compose |
 
 ## Struttura del codice
 
