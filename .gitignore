@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Data / DB / uploads (never commit captured content)
+data/
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Env
+.env
+backend/.env
+
+# Node / frontend build
+node_modules/
+frontend/dist/
+backend/app/static/
+*.tsbuildinfo
+# tsc -b side-effect emits for the config project
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# OS / editor
+.DS_Store

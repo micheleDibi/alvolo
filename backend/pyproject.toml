@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alvolo-backend"
+version = "0.1.0"
+description = "AlVolo — quick-capture inbox with background AI enrichment"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "sqlmodel>=0.0.21",
+    "aiosqlite>=0.20",
+    "greenlet>=3.0",            # required by SQLAlchemy async
+    "alembic>=1.13",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "python-multipart>=0.0.9",  # multipart/form-data parsing for capture
+    "anthropic>=0.39",
+    "trafilatura>=1.9",
+    "httpx>=0.27",
+    "slowapi>=0.1.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -1,0 +1,112 @@
+"""End-to-end API tests against the real ASGI app (lifespan + in-process worker).
+
+Runs with mock enrichment (no ANTHROPIC_API_KEY) so the full capture -> worker -> done
+pipeline is exercised without network/cost. Everything lives in one TestClient block so
+the async SQLite engine stays bound to a single event loop.
+"""
+
+import base64
+import os
+import tempfile
+import time
+
+# Configure the environment BEFORE importing the app (settings is read at import).
+_TMP = tempfile.mkdtemp(prefix="alvolo-test-")
+os.environ["DATA_DIR"] = _TMP
+os.environ["ANTHROPIC_API_KEY"] = ""
+os.environ["CAPTURE_TOKEN"] = ""
+os.environ["WORKER_POLL_SECONDS"] = "0.2"
+
+from fastapi.testclient import TestClient  # noqa: E402
+from app.config import settings  # noqa: E402
+from app.main import app  # noqa: E402
+
+# 1x1 PNG
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+)
+
+
+def _wait_done(client: TestClient, item_id: str, timeout: float = 15.0) -> dict:
+    deadline = time.time() + timeout
+    data = {}
+    while time.time() < deadline:
+        data = client.get(f"/api/items/{item_id}").json()
+        if data["status"] in ("done", "failed"):
+            return data
+        time.sleep(0.2)
+    return data
+
+
+def test_full_flow():
+    with TestClient(app) as client:
+        # health
+        assert client.get("/api/health").status_code == 200
+
+        # capture text (JSON)
+        r = client.post("/api/capture", json={"text": "un'idea al volo"})
+        assert r.status_code == 202
+        text_id = r.json()["id"]
+        assert r.json()["content_type"] == "text"
+
+        # capture link (multipart form)
+        r = client.post("/api/capture", data={"url": "https://example.com"})
+        assert r.status_code == 202
+        assert r.json()["content_type"] == "link"
+
+        # capture image (multipart file)
+        r = client.post(
+            "/api/capture", files={"image": ("x.png", _PNG, "image/png")}
+        )
+        assert r.status_code == 202
+        img_id = r.json()["id"]
+        assert r.json()["content_type"] == "image"
+
+        # empty -> 422
+        assert client.post("/api/capture", json={}).status_code == 422
+
+        # enrichment completes (mock)
+        text_item = _wait_done(client, text_id)
+        assert text_item["status"] == "done"
+        assert text_item["title"]
+        assert text_item["model_used"] == "mock"
+
+        img_item = _wait_done(client, img_id)
+        assert img_item["status"] == "done"
+        assert img_item["image_url"] == f"/api/items/{img_id}/image"
+
+        # image bytes served
+        ir = client.get(f"/api/items/{img_id}/image")
+        assert ir.status_code == 200
+        assert ir.headers["content-type"].startswith("image/")
+
+        # list contains our items
+        lst = client.get("/api/items").json()
+        assert lst["total"] >= 3
+
+        # delete one
+        assert client.delete(f"/api/items/{text_id}").status_code == 204
+        assert client.get(f"/api/items/{text_id}").status_code == 404
+
+
+def test_auth_enforced():
+    # Toggle auth on for this test (require_auth reads settings live).
+    settings.capture_token = "secret-token"
+    try:
+        with TestClient(app) as client:
+            assert client.post("/api/capture", json={"text": "x"}).status_code == 401
+            assert client.get("/api/items").status_code == 401
+            ok = client.post(
+                "/api/capture",
+                json={"text": "x"},
+                headers={"Authorization": "Bearer secret-token"},
+            )
+            assert ok.status_code == 202
+            ok2 = client.post(
+                "/api/capture",
+                data={"text": "y"},
+                headers={"X-API-Key": "secret-token"},
+            )
+            assert ok2.status_code == 202
+    finally:
+        settings.capture_token = ""
