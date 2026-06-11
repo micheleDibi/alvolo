@@ -1,5 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  RotateCw,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { useDeleteItem, useItem, useRetryItem } from "../api";
 import StatusBadge from "../components/StatusBadge";
 import AuthImage from "../components/AuthImage";
@@ -25,7 +34,8 @@ export default function ItemDetail() {
   return (
     <article className="detail">
       <Link to="/" className="back">
-        ← Inbox
+        <ArrowLeft size={16} aria-hidden />
+        Inbox
       </Link>
 
       <div className="detail-head">
@@ -43,14 +53,23 @@ export default function ItemDetail() {
 
       {item.source_url && (
         <a className="source-link" href={item.source_url} target="_blank" rel="noreferrer">
-          🔗 {item.source_url}
+          <ExternalLink size={15} aria-hidden />
+          {item.source_url}
         </a>
       )}
 
       {item.status === "failed" && (
         <div className="failbox">
-          <p>⚠ {item.error_message || "Arricchimento fallito."}</p>
-          <button className="btn" disabled={retry.isPending} onClick={() => retry.mutate(id)}>
+          <p>
+            <TriangleAlert size={16} aria-hidden />
+            {item.error_message || "Arricchimento fallito."}
+          </p>
+          <button
+            className="btn"
+            disabled={retry.isPending}
+            onClick={() => retry.mutate(id)}
+          >
+            <RotateCw size={16} aria-hidden />
             {retry.isPending ? "Riprovo…" : "Riprova"}
           </button>
         </div>
@@ -99,6 +118,7 @@ export default function ItemDetail() {
       {item.extracted_text && (
         <section>
           <button className="link-btn" onClick={() => setShowExtracted((v) => !v)}>
+            {showExtracted ? <ChevronDown size={16} aria-hidden /> : <ChevronRight size={16} aria-hidden />}
             {showExtracted ? "Nascondi" : "Mostra"} testo estratto
             {item.content_type === "image" ? " (OCR)" : ""}
           </button>
@@ -118,11 +138,18 @@ export default function ItemDetail() {
 
       <div className="detail-meta">
         <span>{new Date(item.created_at + "Z").toLocaleString()}</span>
-        {item.model_used && <span> · {item.model_used}</span>}
-        <span> · {item.source}</span>
+        {item.model_used && (
+          <>
+            <span className="sep">·</span>
+            <span>{item.model_used}</span>
+          </>
+        )}
+        <span className="sep">·</span>
+        <span>{item.source}</span>
       </div>
 
       <button className="btn btn-danger" disabled={del.isPending} onClick={onDelete}>
+        <Trash2 size={16} aria-hidden />
         {del.isPending ? "Elimino…" : "Elimina"}
       </button>
     </article>

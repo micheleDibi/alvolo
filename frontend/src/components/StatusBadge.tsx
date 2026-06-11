@@ -12,7 +12,11 @@ export default function StatusBadge({ status }: { status: ItemStatus }) {
   const pending = status === "capturing" || status === "processing";
   return (
     <span className={`badge badge-${status}`}>
-      {pending && <span className="spinner" aria-hidden />}
+      {pending ? (
+        <span className="spinner" aria-hidden />
+      ) : (
+        <span className="badge-dot" aria-hidden />
+      )}
       {LABELS[status]}
     </span>
   );

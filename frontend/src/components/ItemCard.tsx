@@ -1,14 +1,21 @@
 import { Link } from "react-router-dom";
+import { Image as ImageIcon, Link2, PenLine, TriangleAlert } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ItemSummary } from "../types";
 import StatusBadge from "./StatusBadge";
 import AuthImage from "./AuthImage";
 
-const TYPE_ICON: Record<string, string> = { text: "📝", link: "🔗", image: "🖼️" };
+const TYPE_ICON: Record<string, LucideIcon> = {
+  text: PenLine,
+  link: Link2,
+  image: ImageIcon,
+};
 
 export default function ItemCard({ item }: { item: ItemSummary }) {
   const pending = item.status === "capturing" || item.status === "processing";
   const title =
     item.title || (pending ? "Sto arricchendo…" : item.source_url || "Senza titolo");
+  const TypeIcon = TYPE_ICON[item.content_type];
 
   return (
     <Link to={`/item/${item.id}`} className="card">
@@ -19,15 +26,20 @@ export default function ItemCard({ item }: { item: ItemSummary }) {
       )}
       <div className="card-body">
         <div className="card-head">
-          <span className="type-ico" aria-hidden>
-            {TYPE_ICON[item.content_type] || "•"}
-          </span>
+          {TypeIcon && (
+            <span className="type-ico" aria-hidden>
+              <TypeIcon size={15} />
+            </span>
+          )}
           <StatusBadge status={item.status} />
         </div>
         <h3 className="card-title">{title}</h3>
         {item.summary && <p className="card-summary">{item.summary}</p>}
         {item.status === "failed" && item.error_message && (
-          <p className="card-error">⚠ {item.error_message}</p>
+          <p className="card-error">
+            <TriangleAlert size={14} aria-hidden />
+            {item.error_message}
+          </p>
         )}
         {item.tags.length > 0 && (
           <div className="tags">

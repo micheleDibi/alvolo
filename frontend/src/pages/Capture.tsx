@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Image as ImageIcon, ImagePlus, X, Zap } from "lucide-react";
 import { useCaptureImage, useCaptureLink, useCaptureText } from "../api";
 
 const URL_RE = /^https?:\/\/\S+$/i;
@@ -57,20 +58,34 @@ export default function Capture() {
 
       {file ? (
         <div className="file-chip">
-          <span>🖼️ {file.name}</span>
-          <button className="link-btn" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ""; }}>
-            rimuovi
+          <span className="file-chip-name">
+            <ImageIcon size={18} aria-hidden />
+            <span>{file.name}</span>
+          </span>
+          <button
+            className="icon-btn"
+            aria-label="Rimuovi immagine"
+            onClick={() => {
+              setFile(null);
+              if (fileRef.current) fileRef.current.value = "";
+            }}
+          >
+            <X size={18} aria-hidden />
           </button>
         </div>
       ) : (
-        <button className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
-          🖼️ Scegli o scatta una foto
+        <button className="btn btn-ghost file-btn" onClick={() => fileRef.current?.click()}>
+          <ImagePlus size={18} aria-hidden />
+          Scegli o scatta una foto
         </button>
       )}
 
-      {err && <p className="card-error">{err}</p>}
+      {err && (
+        <p className="card-error">{err}</p>
+      )}
 
       <button className="btn btn-primary big" disabled={busy} onClick={submit}>
+        <Zap size={18} aria-hidden />
         {busy ? "Catturo…" : "Cattura al volo"}
       </button>
       <p className="muted small">

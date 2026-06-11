@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Image as ImageIcon, ImageOff } from "lucide-react";
 import { fetchImageObjectUrl } from "../api";
 
 /**
@@ -36,7 +37,17 @@ export default function AuthImage({
     };
   }, [id]);
 
-  if (failed) return <div className={`imgph ${className || ""}`}>🖼️</div>;
-  if (!src) return <div className={`imgph ${className || ""}`} />;
+  if (failed)
+    return (
+      <div className={`imgph ${className || ""}`}>
+        <ImageOff size={22} aria-hidden />
+      </div>
+    );
+  if (!src)
+    return (
+      <div className={`imgph ${className || ""}`}>
+        <ImageIcon size={22} aria-hidden />
+      </div>
+    );
   return <img src={src} alt={alt} className={className} loading="lazy" />;
 }
