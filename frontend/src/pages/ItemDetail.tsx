@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ExternalLink,
   RotateCw,
@@ -34,7 +34,7 @@ export default function ItemDetail() {
   return (
     <article className="detail">
       <Link to="/" className="back">
-        <ArrowLeft size={16} aria-hidden />
+        <ChevronLeft size={22} aria-hidden />
         Inbox
       </Link>
 

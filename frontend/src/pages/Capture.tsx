@@ -38,6 +38,8 @@ export default function Capture() {
   };
 
   return (
+    <>
+    <h1 className="large-title">Cattura</h1>
     <div className="capture">
       <textarea
         className="capture-text"
@@ -92,5 +94,6 @@ export default function Capture() {
         Il salvataggio è istantaneo. L'AI arricchisce in background.
       </p>
     </div>
+    </>
   );
 }

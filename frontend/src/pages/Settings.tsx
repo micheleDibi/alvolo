@@ -28,6 +28,8 @@ export default function Settings() {
   };
 
   return (
+    <>
+    <h1 className="large-title">Impostazioni</h1>
     <div className="settings">
       <section>
         <h2>
@@ -104,5 +106,6 @@ export default function Settings() {
         <code className="code-pill">Authorization: Bearer &lt;token&gt;</code>
       </section>
     </div>
+    </>
   );
 }
