@@ -10,10 +10,12 @@ the full capture -> worker -> done pipeline can be exercised locally without a k
 
 from __future__ import annotations
 
+import asyncio
 import base64
 
 from ..config import settings
 from ..schemas import ENRICHMENT_TOOL_SCHEMA
+from . import images
 
 
 class EnrichmentError(Exception):
@@ -151,6 +153,13 @@ async def enrich_image(image_bytes: bytes, mime: str, instruction: str) -> tuple
     model = settings.opus_model
     if not settings.anthropic_enabled:
         return _mock_enrichment("image", instruction), {}, "mock"
+    try:
+        # Pillow work is CPU-bound: keep it off the event loop.
+        image_bytes, mime = await asyncio.to_thread(
+            images.prepare_for_vision, image_bytes, mime
+        )
+    except ValueError as exc:
+        raise FatalEnrichmentError(str(exc)) from exc
     b64 = base64.standard_b64encode(image_bytes).decode("ascii")
     content = [
         {"type": "image", "source": {"type": "base64", "media_type": mime, "data": b64}},

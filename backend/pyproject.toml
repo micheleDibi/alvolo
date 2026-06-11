@@ -18,6 +18,8 @@ dependencies = [
     "pydantic-settings>=2.3",
     "python-multipart>=0.0.9",  # multipart/form-data parsing for capture
     "anthropic>=0.39",
+    "pillow>=10.4",             # downscale images to the vision API limits
+
     "trafilatura>=1.9",
     "httpx>=0.27",
     "slowapi>=0.1.9",
