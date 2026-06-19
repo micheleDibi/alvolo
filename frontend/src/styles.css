@@ -56,10 +56,49 @@
 
 /* Plain custom props (used by component utilities, not exposed as Tailwind utils) */
 :root {
+  color-scheme: dark;
   --brand-grad: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
   --brand-glow: rgba(99, 102, 241, 0.45);
   --glass-bg: rgba(13, 20, 38, 0.62);
   --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* -------- Light theme (iOS-style) — token overrides, same Aurora accent -------- */
+[data-theme="light"] {
+  color-scheme: light;
+  --color-background: #f2f2f7;
+  --color-surface: #ffffff;
+  --color-elevated: #eceef3;
+  --color-foreground: #1c1c1e;
+  --color-card: #ffffff;
+  --color-card-foreground: #1c1c1e;
+  --color-muted: #eceef3;
+  --color-muted-foreground: #5b616e;
+  --color-border: rgba(60, 60, 67, 0.14);
+  --color-input: rgba(60, 60, 67, 0.24);
+  --color-ring: #6366f1;
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(60, 60, 67, 0.12);
+  --brand-glow: rgba(99, 102, 241, 0.28);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06),
+    0 10px 28px -18px rgba(16, 24, 40, 0.22);
+
+  /* keep the hardcoded accent text/badges readable on light backgrounds */
+  --color-sky-300: #0369a1;
+  --color-sky-400: #0284c7;
+  --color-emerald-300: #047857;
+  --color-emerald-400: #059669;
+  --color-rose-200: #9f1239;
+  --color-rose-300: #be123c;
+  --color-rose-400: #e11d48;
+  --color-amber-300: #b45309;
+  --color-amber-400: #d97706;
+}
+
+[data-theme="light"] .app-bg::before,
+[data-theme="light"] .app-bg::after {
+  opacity: 0.1;
 }
 
 @layer base {

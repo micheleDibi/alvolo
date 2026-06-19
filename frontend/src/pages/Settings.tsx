@@ -1,9 +1,29 @@
 import { useState } from "react";
-import { Eye, EyeOff, Copy, Check, KeyRound, Smartphone, Share2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+  KeyRound,
+  Smartphone,
+  Share2,
+  Palette,
+  Monitor,
+  Sun,
+  Moon,
+} from "lucide-react";
 import { getToken, setToken } from "../lib/auth";
+import { getThemePref, setThemePref, type ThemePref } from "../lib/theme";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const THEMES: { value: ThemePref; label: string; icon: typeof Sun }[] = [
+  { value: "system", label: "Sistema", icon: Monitor },
+  { value: "light", label: "Chiaro", icon: Sun },
+  { value: "dark", label: "Scuro", icon: Moon },
+];
 
 const STEPS = [
   <>Apri questa pagina in Safari.</>,
@@ -19,6 +39,12 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [show, setShow] = useState(false);
+  const [theme, setTheme] = useState<ThemePref>(getThemePref());
+
+  const pickTheme = (v: ThemePref) => {
+    setTheme(v);
+    setThemePref(v);
+  };
 
   const origin = window.location.origin;
   const captureUrl = `${origin}/api/capture`;
@@ -41,6 +67,34 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col gap-5">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-sky-300" aria-hidden />
+            Aspetto
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-2">
+            {THEMES.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => pickTheme(t.value)}
+                className={cn(
+                  "press flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3",
+                  theme === t.value
+                    ? "border-brand/50 bg-elevated text-foreground"
+                    : "border-border text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <t.icon className="h-5 w-5" aria-hidden />
+                <span className="text-[13px] font-medium">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

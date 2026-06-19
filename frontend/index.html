@@ -6,6 +6,23 @@
     <title>AlVolo</title>
     <meta name="description" content="Cattura al volo: screenshot, link e idee, arricchiti dall'AI." />
     <meta name="theme-color" content="#0b1120" />
+    <script>
+      // Apply the saved theme before paint to avoid a flash of the wrong theme.
+      (function () {
+        try {
+          var v = localStorage.getItem("alvolo_theme");
+          var mode =
+            v === "light" || v === "dark"
+              ? v
+              : matchMedia("(prefers-color-scheme: light)").matches
+                ? "light"
+                : "dark";
+          document.documentElement.dataset.theme = mode;
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute("content", mode === "light" ? "#f2f2f7" : "#0b1120");
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- iOS PWA: these are not covered by the web app manifest on Safari -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
