@@ -208,6 +208,23 @@ def test_audio_capture():
         assert item["file_url"] == f"/api/items/{aid}/file"
 
 
+def test_stats_and_export():
+    with TestClient(app) as client:
+        a = client.post("/api/capture", json={"text": "elemento per le statistiche"}).json()["id"]
+        _wait_done(client, a)
+
+        s = client.get("/api/stats").json()
+        assert s["total"] >= 1
+        assert "by_status" in s and "tokens_input" in s
+        assert len(s["per_day"]) == 14
+
+        ej = client.get("/api/export", params={"format": "json"})
+        assert ej.status_code == 200 and isinstance(ej.json(), list) and len(ej.json()) >= 1
+
+        em = client.get("/api/export", params={"format": "markdown"})
+        assert em.status_code == 200 and em.text.startswith("# AlVolo")
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"

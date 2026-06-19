@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -11,9 +12,13 @@ import {
   Monitor,
   Sun,
   Moon,
+  BarChart3,
+  Download,
+  ChevronRight,
 } from "lucide-react";
 import { getToken, setToken } from "../lib/auth";
 import { getThemePref, setThemePref, type ThemePref } from "../lib/theme";
+import { exportData } from "../api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,6 +49,22 @@ export default function Settings() {
   const pickTheme = (v: ThemePref) => {
     setTheme(v);
     setThemePref(v);
+  };
+
+  const doExport = async (format: "json" | "markdown") => {
+    try {
+      const blob = await exportData(format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = format === "json" ? "alvolo-export.json" : "alvolo-export.md";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
   };
 
   const origin = window.location.origin;
@@ -155,6 +176,37 @@ export default function Settings() {
                 )}
               </Button>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-sky-300" aria-hidden />
+            Dati e statistiche
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <Link
+            to="/stats"
+            className="flex items-center justify-between rounded-lg border border-border bg-surface px-3.5 py-3 text-[15px] text-foreground press hover:border-white/15"
+          >
+            <span className="flex items-center gap-2.5">
+              <BarChart3 className="h-4 w-4 text-sky-300" aria-hidden />
+              Statistiche e costo AI
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+          </Link>
+          <div className="flex flex-wrap gap-2.5">
+            <Button variant="ghost" onClick={() => doExport("json")}>
+              <Download className="h-4 w-4" aria-hidden />
+              Esporta JSON
+            </Button>
+            <Button variant="ghost" onClick={() => doExport("markdown")}>
+              <Download className="h-4 w-4" aria-hidden />
+              Esporta Markdown
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -15,6 +15,7 @@ import type {
   ItemPatch,
   ItemQuery,
   Meta,
+  StatsResponse,
 } from "./types";
 export type { ItemList } from "./types";
 
@@ -148,6 +149,14 @@ export async function askItem(id: string, question?: string): Promise<AskRespons
 
 export async function getDigest(days = 7): Promise<DigestResponse> {
   return (await apiFetch(`/api/digest?days=${days}`)).json();
+}
+
+export async function getStats(): Promise<StatsResponse> {
+  return (await apiFetch("/api/stats")).json();
+}
+
+export async function exportData(format: "json" | "markdown"): Promise<Blob> {
+  return (await apiFetch(`/api/export?format=${format}`)).blob();
 }
 
 // --- React Query hooks ----------------------------------------------------- //

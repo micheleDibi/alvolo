@@ -81,6 +81,23 @@ export interface DigestResponse {
   recap: string;
 }
 
+export interface DayCount {
+  date: string;
+  count: number;
+}
+
+export interface StatsResponse {
+  total: number;
+  by_status: Record<string, number>;
+  by_type: Record<string, number>;
+  by_source: Record<string, number>;
+  top_categories: TagCount[];
+  tokens_input: number;
+  tokens_output: number;
+  estimated_cost_usd: number;
+  per_day: DayCount[];
+}
+
 export interface Meta {
   tags: TagCount[];
   categories: TagCount[];

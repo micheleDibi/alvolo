@@ -13,6 +13,7 @@ import ItemDetail from "./pages/ItemDetail";
 import Capture from "./pages/Capture";
 import Settings from "./pages/Settings";
 import Ask from "./pages/Ask";
+import Stats from "./pages/Stats";
 
 type TabDef = {
   to: string;
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="/ask" element={<Ask />} />
           <Route path="/capture" element={<Capture />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/stats" element={<Stats />} />
         </Routes>
       </main>
 
