@@ -39,6 +39,27 @@ async def enrich_item(item: Item) -> tuple[dict, dict, str]:
             enrichment["extracted_text"] = result.text
         return enrichment, usage, model
 
+    if item.content_type == ContentType.AUDIO.value:
+        if not item.file_filename:
+            raise claude.FatalEnrichmentError("Audio item is missing its file.")
+        from .. import storage
+        from . import audio
+
+        try:
+            audio_bytes = storage.read_file(item.file_filename)
+        except FileNotFoundError as exc:
+            raise claude.FatalEnrichmentError("Audio file not found on disk.") from exc
+        transcript = await audio.transcribe(audio_bytes, item.file_mime or "audio/webm")
+        if not transcript:
+            transcript = "(trascrizione non disponibile — installa faster-whisper)"
+        instruction = (
+            "The user captured a voice note. Below is its transcript. Enrich it as a note, "
+            "and keep the transcript verbatim in extracted_text."
+        )
+        enrichment, usage, model = await claude.enrich_text(instruction, transcript)
+        enrichment["extracted_text"] = transcript
+        return enrichment, usage, model
+
     if item.content_type == ContentType.PDF.value:
         if not item.file_filename:
             raise claude.FatalEnrichmentError("PDF item is missing its file.")

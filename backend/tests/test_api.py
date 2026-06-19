@@ -192,6 +192,22 @@ def test_pdf_capture():
         assert fr.headers["content-type"].startswith("application/pdf")
 
 
+def test_audio_capture():
+    # faster-whisper isn't installed in CI, so transcription degrades to a placeholder;
+    # the capture -> enrich -> done flow must still complete.
+    clip = b"OggS\x00\x02-fake-audio-bytes"
+    with TestClient(app) as client:
+        r = client.post("/api/capture", files={"image": ("nota.webm", clip, "audio/webm")})
+        assert r.status_code == 202
+        assert r.json()["content_type"] == "audio"
+        aid = r.json()["id"]
+
+        item = _wait_done(client, aid)
+        assert item["status"] == "done"
+        assert item["extracted_text"]  # transcript (or degraded placeholder) is stored
+        assert item["file_url"] == f"/api/items/{aid}/file"
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"

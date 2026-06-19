@@ -1,23 +1,77 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ImagePlus, X, AlertTriangle, Sparkles, Loader2 } from "lucide-react";
+import { ImagePlus, X, AlertTriangle, Sparkles, Loader2, Mic, Square } from "lucide-react";
 import { useCaptureImage, useCaptureLink, useCaptureText } from "../api";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 const URL_RE = /^https?:\/\/\S+$/i;
 
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
 export default function Capture() {
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recSecs, setRecSecs] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const mrRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const capText = useCaptureText();
   const capLink = useCaptureLink();
   const capImage = useCaptureImage();
   const busy = capText.isPending || capLink.isPending || capImage.isPending;
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    },
+    [],
+  );
+
+  const startRec = async () => {
+    setErr(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => {
+        if (e.data.size) chunksRef.current.push(e.data);
+      };
+      mr.onstop = () => {
+        const type = mr.mimeType || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type });
+        const ext = type.includes("ogg") ? "ogg" : "webm";
+        setFile(new File([blob], `nota-vocale.${ext}`, { type: blob.type }));
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      mr.start();
+      mrRef.current = mr;
+      setRecording(true);
+      setRecSecs(0);
+      timerRef.current = window.setInterval(() => setRecSecs((s) => s + 1), 1000);
+    } catch {
+      setErr("Microfono non disponibile o permesso negato.");
+    }
+  };
+
+  const stopRec = () => {
+    mrRef.current?.stop();
+    setRecording(false);
+    if (timerRef.current) window.clearInterval(timerRef.current);
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   const submit = async () => {
     setErr(null);
@@ -62,7 +116,11 @@ export default function Capture() {
         <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card glass px-4 py-3">
           <span className="flex min-w-0 items-center gap-2.5 text-sm">
             <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-aurora text-white">
-              <ImagePlus className="h-4 w-4" aria-hidden />
+              {file.type.startsWith("audio/") ? (
+                <Mic className="h-4 w-4" aria-hidden />
+              ) : (
+                <ImagePlus className="h-4 w-4" aria-hidden />
+              )}
             </span>
             <span className="truncate text-foreground">{file.name}</span>
           </span>
@@ -70,26 +128,46 @@ export default function Capture() {
             variant="link"
             size="none"
             className="flex-none gap-1 text-muted-foreground hover:text-rose-300"
-            onClick={() => {
-              setFile(null);
-              if (fileRef.current) fileRef.current.value = "";
-            }}
+            onClick={clearFile}
           >
             <X className="h-4 w-4" aria-hidden />
             rimuovi
           </Button>
         </div>
-      ) : (
-        <Button
-          variant="ghost"
-          className="h-14 justify-start gap-3 border-dashed text-muted-foreground hover:text-foreground"
-          onClick={() => fileRef.current?.click()}
-        >
-          <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-elevated text-sky-300">
-            <ImagePlus className="h-4 w-4" aria-hidden />
+      ) : recording ? (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-rose-400/40 bg-rose-400/10 px-4 py-3">
+          <span className="flex items-center gap-2.5 text-sm text-rose-200">
+            <span className="pulse-dot h-2.5 w-2.5 rounded-full bg-rose-400" aria-hidden />
+            Registrazione… <span className="tnum">{fmt(recSecs)}</span>
           </span>
-          Scegli un'immagine o un PDF
-        </Button>
+          <Button variant="danger" size="sm" onClick={stopRec}>
+            <Square className="h-4 w-4" aria-hidden />
+            Stop
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5 sm:flex-row">
+          <Button
+            variant="ghost"
+            className="h-14 flex-1 justify-start gap-3 border-dashed text-muted-foreground hover:text-foreground"
+            onClick={() => fileRef.current?.click()}
+          >
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-elevated text-sky-300">
+              <ImagePlus className="h-4 w-4" aria-hidden />
+            </span>
+            Immagine o PDF
+          </Button>
+          <Button
+            variant="ghost"
+            className="h-14 flex-1 justify-start gap-3 border-dashed text-muted-foreground hover:text-foreground"
+            onClick={startRec}
+          >
+            <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-elevated text-sky-300">
+              <Mic className="h-4 w-4" aria-hidden />
+            </span>
+            Nota vocale
+          </Button>
+        </div>
       )}
 
       {err && (
@@ -103,7 +181,7 @@ export default function Capture() {
         variant="aurora"
         size="lg"
         className="w-full"
-        disabled={busy}
+        disabled={busy || recording}
         onClick={submit}
       >
         {busy ? (

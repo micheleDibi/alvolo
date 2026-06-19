@@ -122,6 +122,7 @@ async def capture(
     file_filename: str | None = None
     file_mime: str | None = None
     is_pdf = bool(image_data) and (image_data[:5] == b"%PDF-" or image_mime == "application/pdf")
+    is_audio = bool(image_data) and bool(image_mime) and image_mime.split(";")[0].startswith("audio/")
 
     if image_data and is_pdf:
         if len(image_data) > settings.max_image_bytes:
@@ -132,6 +133,15 @@ async def capture(
         file_mime = "application/pdf"
         file_filename = storage.save_file(item_id, image_data, file_mime)
         content_type = ContentType.PDF
+    elif image_data and is_audio:
+        if len(image_data) > settings.max_image_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File too large (max {settings.max_image_bytes // (1024 * 1024)}MB).",
+            )
+        file_mime = image_mime.split(";")[0]
+        file_filename = storage.save_file(item_id, image_data, file_mime)
+        content_type = ContentType.AUDIO
     elif image_data:
         image_mime = _validate_image(image_data, image_mime)
         image_filename = storage.save_image(item_id, image_data, image_mime)

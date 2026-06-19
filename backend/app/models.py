@@ -27,6 +27,7 @@ class ContentType(str, enum.Enum):
     LINK = "link"
     IMAGE = "image"
     PDF = "pdf"
+    AUDIO = "audio"
 
 
 class ItemStatus(str, enum.Enum):

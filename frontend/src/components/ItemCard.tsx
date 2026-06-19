@@ -4,6 +4,7 @@ import {
   Link2,
   Image as ImageIcon,
   File as FileIcon,
+  Mic,
   AlertTriangle,
   ListTodo,
 } from "lucide-react";
@@ -16,6 +17,7 @@ const TYPE_ICON: Record<ContentType, typeof FileText> = {
   link: Link2,
   image: ImageIcon,
   pdf: FileIcon,
+  audio: Mic,
 };
 
 export default function ItemCard({

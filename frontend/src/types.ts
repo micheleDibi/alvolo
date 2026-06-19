@@ -1,4 +1,4 @@
-export type ContentType = "text" | "link" | "image" | "pdf";
+export type ContentType = "text" | "link" | "image" | "pdf" | "audio";
 export type ItemStatus = "capturing" | "processing" | "done" | "failed" | "archived";
 
 export interface ItemSummary {

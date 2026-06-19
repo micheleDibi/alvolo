@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     # --- link extraction ---
     fetch_timeout_seconds: float = 10.0
 
+    # --- audio transcription (faster-whisper, local) ---
+    # Model size: tiny | base | small | medium | large-v3 (bigger = better/slower).
+    whisper_model: str = "base"
+
     # --- misc ---
     env: str = "development"
 

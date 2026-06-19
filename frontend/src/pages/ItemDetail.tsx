@@ -21,6 +21,7 @@ import {
   FileText,
   File as FileIcon,
   Image as ImageIcon,
+  Mic,
 } from "lucide-react";
 import {
   fetchFileObjectUrl,
@@ -32,6 +33,7 @@ import {
 import type { ContentType } from "../types";
 import StatusBadge from "../components/StatusBadge";
 import AuthImage from "../components/AuthImage";
+import AudioPlayer from "../components/AudioPlayer";
 import AskBox from "../components/AskBox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +44,7 @@ const TYPE_ICON: Record<ContentType, typeof FileText> = {
   link: Link2,
   image: ImageIcon,
   pdf: FileIcon,
+  audio: Mic,
 };
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -150,6 +153,8 @@ export default function ItemDetail() {
           Apri il PDF
         </button>
       )}
+
+      {item.content_type === "audio" && item.file_url && <AudioPlayer id={item.id} />}
 
       {item.source_url && (
         <a
