@@ -49,7 +49,7 @@ riavvii; all'avvio gli item rimasti in `processing` vengono rimessi in coda.
 
 - **Backend**: Python 3.12 · FastAPI · SQLModel/SQLite (WAL) · worker asyncio in-process (niente broker)
 - **AI**: Anthropic Claude — `claude-opus-4-8` (vision) e `claude-sonnet-4-6` (testo/link), output strutturato
-- **Frontend**: React 18 + Vite + TypeScript · PWA (vite-plugin-pwa) · TanStack Query
+- **Frontend**: React 18 + Vite + TypeScript · Tailwind CSS v4 + shadcn/ui · icone Lucide · font Space Grotesk + Inter (self-hosted) · PWA (vite-plugin-pwa) · TanStack Query
 - **Deploy**: un container Docker (frontend buildato dentro il backend), pensato per un VPS
 
 ---
@@ -184,7 +184,7 @@ backend/app/
   config.py · db.py · models.py · schemas.py · auth.py · storage.py
   api/        capture.py (POST /api/capture) · items.py (list/detail/image/retry/delete)
   worker/     queue.py (loop) · enrich.py (branch per tipo) · claude.py · extract.py
-frontend/src/ React PWA (Inbox, ItemDetail, Capture, Settings)
+frontend/src/ React PWA (Inbox, ItemDetail, Capture, Settings) · UI Tailwind/shadcn (components/ui) · design system in styles.css
 Dockerfile · docker-compose.yml · shortcut/AlVolo.md
 ```
 

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { ImageOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { fetchImageObjectUrl } from "../api";
 
 /**
@@ -36,7 +38,17 @@ export default function AuthImage({
     };
   }, [id]);
 
-  if (failed) return <div className={`imgph ${className || ""}`}>🖼️</div>;
-  if (!src) return <div className={`imgph ${className || ""}`} />;
-  return <img src={src} alt={alt} className={className} loading="lazy" />;
+  if (failed)
+    return (
+      <div
+        className={cn(
+          "skeleton grid aspect-[4/3] w-full place-items-center text-muted-foreground after:hidden",
+          className,
+        )}
+      >
+        <ImageOff className="h-6 w-6" aria-hidden />
+      </div>
+    );
+  if (!src) return <div className={cn("skeleton aspect-[4/3] w-full", className)} />;
+  return <img src={src} alt={alt} className={cn("block", className)} loading="lazy" />;
 }
