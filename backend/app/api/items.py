@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -19,6 +20,7 @@ from ..schemas import (
     ItemList,
     ItemPatch,
     MetaResponse,
+    RelatedItem,
     TagCount,
     dumps_list,
     item_to_detail,
@@ -47,9 +49,14 @@ async def list_items(
     category: str | None = Query(default=None),
     tag: str | None = Query(default=None),
     q: str | None = Query(default=None, description="Free-text search across title/summary/body/tags."),
+    has_todo: bool = Query(default=False, description="Only items with open action items (to-dos)."),
     sort: str = Query(default="newest", pattern="^(newest|oldest)$"),
 ) -> ItemList:
     where = []
+
+    if has_todo:
+        where.append(Item.action_items.is_not(None))
+        where.append(Item.action_items.not_in(("", "[]")))
 
     # Default view hides archived items; an explicit ?status= shows that bucket.
     if status_filter:
@@ -140,7 +147,29 @@ async def items_meta(session: AsyncSession = Depends(get_session)) -> MetaRespon
 @router.get("/{item_id}", response_model=ItemDetail)
 async def get_item(item_id: str, session: AsyncSession = Depends(get_session)) -> ItemDetail:
     item = await _get_or_404(session, item_id)
-    return item_to_detail(item)
+    detail = item_to_detail(item)
+    try:
+        rel_ids = json.loads(item.related_item_ids) if item.related_item_ids else []
+    except (json.JSONDecodeError, TypeError):
+        rel_ids = []
+    if rel_ids:
+        rows = (
+            await session.execute(
+                select(Item).where(Item.id.in_(rel_ids), Item.status != _ARCHIVED)
+            )
+        ).scalars().all()
+        order = {rid: n for n, rid in enumerate(rel_ids)}
+        rows.sort(key=lambda r: order.get(r.id, 999))
+        detail.related = [
+            RelatedItem(
+                id=r.id,
+                title=r.title or r.source_url or "Senza titolo",
+                content_type=r.content_type,  # type: ignore[arg-type]
+                status=r.status,  # type: ignore[arg-type]
+            )
+            for r in rows
+        ]
+    return detail
 
 
 @router.get("/{item_id}/image")
@@ -169,6 +198,8 @@ async def patch_item(
         item.category = body.category
     if "tags" in fields:
         item.tags = dumps_list(body.tags)
+    if "action_items" in fields:
+        item.action_items = dumps_list(body.action_items)
     item.updated_at = utcnow()
     session.add(item)
     await session.commit()

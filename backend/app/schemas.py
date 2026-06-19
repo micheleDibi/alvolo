@@ -26,6 +26,7 @@ class EnrichmentResult(BaseModel):
     related_ideas: list[str] = Field(default_factory=list)
     deep_analysis: str
     extracted_text: str | None = None  # OCR for images / cleaned article body for links
+    action_items: list[str] = Field(default_factory=list)
 
 
 # JSON Schema handed to Claude as a forced-tool input_schema (guarantees structured output).
@@ -61,8 +62,16 @@ ENRICHMENT_TOOL_SCHEMA: dict = {
             "type": ["string", "null"],
             "description": "For images: all text read from the image (OCR). For links: the cleaned article body. Otherwise null.",
         },
+        "action_items": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Concrete, actionable to-dos implied by the content (short imperative phrases). Empty array if none.",
+        },
     },
-    "required": ["title", "summary", "category", "tags", "key_points", "related_ideas", "deep_analysis"],
+    "required": [
+        "title", "summary", "category", "tags", "key_points",
+        "related_ideas", "deep_analysis", "action_items",
+    ],
     "additionalProperties": False,
 }
 
@@ -86,9 +95,17 @@ class ItemSummary(BaseModel):
     summary: str | None
     category: str | None
     tags: list[str]
+    action_items: list[str]
     has_image: bool
     source_url: str | None
     error_message: str | None
+
+
+class RelatedItem(BaseModel):
+    id: str
+    title: str
+    content_type: ContentType
+    status: ItemStatus
 
 
 class ItemDetail(ItemSummary):
@@ -101,6 +118,7 @@ class ItemDetail(ItemSummary):
     extracted_text: str | None
     model_used: str | None
     image_url: str | None
+    related: list[RelatedItem] = Field(default_factory=list)
 
 
 class ItemList(BaseModel):
@@ -115,6 +133,7 @@ class ItemPatch(BaseModel):
     title: str | None = None
     category: str | None = None
     tags: list[str] | None = None
+    action_items: list[str] | None = None
 
 
 class TagCount(BaseModel):
@@ -160,6 +179,7 @@ def item_to_summary(item: Item) -> ItemSummary:
         summary=item.summary,
         category=item.category,
         tags=_loads_list(item.tags),
+        action_items=_loads_list(item.action_items),
         has_image=bool(item.image_filename),
         source_url=item.source_url,
         error_message=item.error_message,

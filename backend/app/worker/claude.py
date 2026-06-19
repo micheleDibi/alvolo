@@ -44,7 +44,9 @@ SYSTEM_PROMPT = (
     "- deep_analysis: a few paragraphs of genuinely useful deeper analysis — context, why it "
     "matters, connections, and what the user might do next.\n"
     "- extracted_text: for images, ALL text you can read from the image (OCR); for links, the "
-    "cleaned main content if provided; otherwise null.\n\n"
+    "cleaned main content if provided; otherwise null.\n"
+    "- action_items: concrete to-dos the user might act on, as short imperative strings "
+    "(e.g. 'Comprare il caffè', 'Leggere l'articolo'); empty array if there is nothing actionable.\n\n"
     "Be concise but substantive. Always write in the same language as the captured content. "
     "Never invent facts you cannot infer from the content; if information is missing, say so."
 )
@@ -86,6 +88,7 @@ def _mock_enrichment(kind: str, hint: str) -> dict:
             "synthetic. Provide an API key to get real titles, summaries and analysis."
         ),
         "extracted_text": hint or None,
+        "action_items": ["[mock] Configura ANTHROPIC_API_KEY", "[mock] Rivedi questo elemento"],
     }
 
 

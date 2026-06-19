@@ -7,20 +7,33 @@ import {
   AlertTriangle,
   RotateCw,
   ListChecks,
+  ListTodo,
   Sparkles,
   Lightbulb,
   ScrollText,
   ChevronDown,
+  ChevronRight,
+  Check,
+  Network,
   Trash2,
   Archive,
   ArchiveRestore,
+  FileText,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useDeleteItem, useItem, usePatchItem, useRetryItem } from "../api";
+import type { ContentType } from "../types";
 import StatusBadge from "../components/StatusBadge";
 import AuthImage from "../components/AuthImage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+const TYPE_ICON: Record<ContentType, typeof FileText> = {
+  text: FileText,
+  link: Link2,
+  image: ImageIcon,
+};
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -149,6 +162,32 @@ export default function ItemDetail() {
         </p>
       )}
 
+      {item.action_items.length > 0 && (
+        <section>
+          <SectionTitle icon={ListTodo}>Da fare</SectionTitle>
+          <ul className="space-y-1">
+            {item.action_items.map((a, i) => (
+              <li key={i}>
+                <button
+                  onClick={() =>
+                    patch.mutate({
+                      id,
+                      patch: { action_items: item.action_items.filter((_, j) => j !== i) },
+                    })
+                  }
+                  className="group flex w-full items-start gap-2.5 rounded-md py-1 text-left text-[15px] leading-snug text-foreground/90 press"
+                >
+                  <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-md border border-border text-transparent transition group-hover:border-emerald-400 group-hover:text-emerald-400">
+                    <Check className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  <span>{a}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {item.key_points.length > 0 && (
         <section>
           <SectionTitle icon={ListChecks}>Punti chiave</SectionTitle>
@@ -217,6 +256,32 @@ export default function ItemDetail() {
               {item.extracted_text}
             </pre>
           )}
+        </section>
+      )}
+
+      {item.related.length > 0 && (
+        <section>
+          <SectionTitle icon={Network}>Correlati</SectionTitle>
+          <div className="space-y-2">
+            {item.related.map((r) => {
+              const RIcon = TYPE_ICON[r.content_type] ?? FileText;
+              return (
+                <Link
+                  key={r.id}
+                  to={`/item/${r.id}`}
+                  className="flex items-center gap-2.5 rounded-lg border border-border bg-card/60 glass px-3 py-2.5 press hover:border-white/15"
+                >
+                  <span className="grid h-7 w-7 flex-none place-items-center rounded-md bg-elevated text-sky-300">
+                    <RIcon className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[15px] text-foreground">
+                    {r.title}
+                  </span>
+                  <ChevronRight className="h-4 w-4 flex-none text-muted-foreground" aria-hidden />
+                </Link>
+              );
+            })}
+          </div>
         </section>
       )}
 

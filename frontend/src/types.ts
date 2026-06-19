@@ -11,9 +11,17 @@ export interface ItemSummary {
   summary: string | null;
   category: string | null;
   tags: string[];
+  action_items: string[];
   has_image: boolean;
   source_url: string | null;
   error_message: string | null;
+}
+
+export interface RelatedItem {
+  id: string;
+  title: string;
+  content_type: ContentType;
+  status: ItemStatus;
 }
 
 export interface ItemDetail extends ItemSummary {
@@ -26,6 +34,7 @@ export interface ItemDetail extends ItemSummary {
   extracted_text: string | null;
   model_used: string | null;
   image_url: string | null;
+  related: RelatedItem[];
 }
 
 export interface ItemList {
@@ -38,6 +47,7 @@ export interface ItemQuery {
   category?: string;
   tag?: string;
   q?: string;
+  has_todo?: boolean;
   sort?: "newest" | "oldest";
 }
 
@@ -46,6 +56,7 @@ export interface ItemPatch {
   title?: string | null;
   category?: string | null;
   tags?: string[];
+  action_items?: string[];
 }
 
 export interface TagCount {

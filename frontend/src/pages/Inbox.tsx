@@ -90,6 +90,7 @@ export default function Inbox() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [category, setCategory] = useState<string | undefined>(undefined);
   const [tag, setTag] = useState<string | undefined>(undefined);
+  const [todo, setTodo] = useState(false);
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
 
@@ -100,10 +101,10 @@ export default function Inbox() {
   }, [qInput]);
 
   const query: ItemQuery = useMemo(
-    () => ({ status: statusFilter, category, tag, q: q || undefined }),
-    [statusFilter, category, tag, q],
+    () => ({ status: statusFilter, category, tag, q: q || undefined, has_todo: todo || undefined }),
+    [statusFilter, category, tag, q, todo],
   );
-  const hasFilter = Boolean(statusFilter || category || tag || q);
+  const hasFilter = Boolean(statusFilter || category || tag || q || todo);
   const inArchive = statusFilter === "archived";
 
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -129,6 +130,7 @@ export default function Inbox() {
     setStatusFilter(undefined);
     setCategory(undefined);
     setTag(undefined);
+    setTodo(false);
     setQInput("");
   };
 
@@ -181,6 +183,9 @@ export default function Inbox() {
             {c.label}
           </Chip>
         ))}
+        <Chip active={todo} onClick={() => setTodo((v) => !v)}>
+          Da fare
+        </Chip>
         {(meta.data?.categories ?? []).map((c) => (
           <Chip
             key={`cat:${c.name}`}

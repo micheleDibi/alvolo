@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Link2, Image as ImageIcon, AlertTriangle } from "lucide-react";
+import { FileText, Link2, Image as ImageIcon, AlertTriangle, ListTodo } from "lucide-react";
 import type { ContentType, ItemSummary } from "../types";
 import StatusBadge from "./StatusBadge";
 import AuthImage from "./AuthImage";
@@ -44,6 +44,12 @@ export default function ItemCard({
             <TypeIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
           </span>
           <StatusBadge status={item.status} />
+          {item.action_items.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+              <ListTodo className="h-3 w-3" aria-hidden />
+              {item.action_items.length}
+            </span>
+          )}
         </div>
 
         <h3 className="font-display text-[16px] font-semibold leading-tight text-foreground">

@@ -66,6 +66,8 @@ class Item(SQLModel, table=True):
     related_ideas: str | None = None  # JSON: list[str]
     deep_analysis: str | None = None
     extracted_text: str | None = None  # OCR (images) / cleaned body (links)
+    action_items: str | None = None    # JSON: list[str] — actionable to-dos found in the content
+    related_item_ids: str | None = None  # JSON: list[str] — ids of semantically related items
 
     # --- observability / cost (future-proof) ---
     model_used: str | None = None

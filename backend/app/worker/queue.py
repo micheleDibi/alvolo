@@ -26,6 +26,7 @@ from ..models import Item, ItemStatus, utcnow
 from ..schemas import EnrichmentResult, dumps_list
 from . import claude
 from .enrich import enrich_item
+from .relate import find_related
 
 logger = logging.getLogger("alvolo.worker")
 
@@ -175,8 +176,14 @@ class Worker:
             item.key_points = dumps_list(validated.key_points)
             item.related_ideas = dumps_list(validated.related_ideas)
             item.deep_analysis = validated.deep_analysis
+            item.action_items = dumps_list(validated.action_items)
             if validated.extracted_text is not None:
                 item.extracted_text = validated.extracted_text
+            # Link to semantically-related items (tag/category overlap).
+            related = await find_related(
+                session, item.id, validated.tags, validated.category
+            )
+            item.related_item_ids = dumps_list(related)
             item.model_used = model
             item.token_usage = json.dumps(usage) if usage else None
             item.error_message = None

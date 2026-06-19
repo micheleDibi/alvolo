@@ -122,6 +122,27 @@ def test_meta_filters_and_archive():
         assert a in {i["id"] for i in client.get("/api/items").json()["items"]}
 
 
+def test_action_items_related_and_todo_filter():
+    with TestClient(app) as client:
+        a = client.post("/api/capture", json={"text": "primo appunto"}).json()["id"]
+        _wait_done(client, a)
+        b = client.post("/api/capture", json={"text": "secondo appunto"}).json()["id"]
+        _wait_done(client, b)
+
+        bd = client.get(f"/api/items/{b}").json()
+        # mock enrichment emits a couple of action items
+        assert len(bd["action_items"]) >= 1
+        # b links to a (both done, sharing the mock/text tags; a finished first)
+        assert a in [r["id"] for r in bd["related"]]
+
+        # has_todo filter returns items with open to-dos
+        assert client.get("/api/items", params={"has_todo": "true"}).json()["total"] >= 2
+
+        # checking off all to-dos via PATCH
+        r = client.patch(f"/api/items/{b}", json={"action_items": []})
+        assert r.status_code == 200 and r.json()["action_items"] == []
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"
