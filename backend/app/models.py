@@ -26,6 +26,7 @@ class ContentType(str, enum.Enum):
     TEXT = "text"
     LINK = "link"
     IMAGE = "image"
+    PDF = "pdf"
 
 
 class ItemStatus(str, enum.Enum):
@@ -56,6 +57,8 @@ class Item(SQLModel, table=True):
     source_url: str | None = None
     image_filename: str | None = None
     image_mime: str | None = None
+    file_filename: str | None = None  # generic attachment (e.g. PDF) on disk
+    file_mime: str | None = None
 
     # --- enrichment output (NULL until DONE); JSON arrays stored as TEXT ---
     title: str | None = None

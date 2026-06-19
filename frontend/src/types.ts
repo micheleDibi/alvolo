@@ -1,4 +1,4 @@
-export type ContentType = "text" | "link" | "image";
+export type ContentType = "text" | "link" | "image" | "pdf";
 export type ItemStatus = "capturing" | "processing" | "done" | "failed" | "archived";
 
 export interface ItemSummary {
@@ -34,6 +34,7 @@ export interface ItemDetail extends ItemSummary {
   extracted_text: string | null;
   model_used: string | null;
   image_url: string | null;
+  file_url: string | null;
   related: RelatedItem[];
 }
 

@@ -118,6 +118,7 @@ class ItemDetail(ItemSummary):
     extracted_text: str | None
     model_used: str | None
     image_url: str | None
+    file_url: str | None
     related: list[RelatedItem] = Field(default_factory=list)
 
 
@@ -198,4 +199,5 @@ def item_to_detail(item: Item) -> ItemDetail:
         extracted_text=item.extracted_text,
         model_used=item.model_used,
         image_url=f"/api/items/{item.id}/image" if item.image_filename else None,
+        file_url=f"/api/items/{item.id}/file" if item.file_filename else None,
     )

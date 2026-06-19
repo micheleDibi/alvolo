@@ -19,9 +19,16 @@ import {
   Archive,
   ArchiveRestore,
   FileText,
+  File as FileIcon,
   Image as ImageIcon,
 } from "lucide-react";
-import { useDeleteItem, useItem, usePatchItem, useRetryItem } from "../api";
+import {
+  fetchFileObjectUrl,
+  useDeleteItem,
+  useItem,
+  usePatchItem,
+  useRetryItem,
+} from "../api";
 import type { ContentType } from "../types";
 import StatusBadge from "../components/StatusBadge";
 import AuthImage from "../components/AuthImage";
@@ -34,6 +41,7 @@ const TYPE_ICON: Record<ContentType, typeof FileText> = {
   text: FileText,
   link: Link2,
   image: ImageIcon,
+  pdf: FileIcon,
 };
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -94,6 +102,14 @@ export default function ItemDetail() {
     navigate("/");
   };
 
+  const openPdf = async () => {
+    try {
+      window.open(await fetchFileObjectUrl(id), "_blank");
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <article className="flex flex-col gap-4">
       <Link
@@ -121,6 +137,18 @@ export default function ItemDetail() {
             className="max-h-[60vh] w-full rounded-none object-contain"
           />
         </div>
+      )}
+
+      {item.content_type === "pdf" && item.file_url && (
+        <button
+          onClick={openPdf}
+          className="press inline-flex w-fit items-center gap-2.5 rounded-lg border border-border bg-card/60 glass px-3.5 py-2.5 text-[15px] text-foreground hover:border-white/15"
+        >
+          <span className="grid h-7 w-7 flex-none place-items-center rounded-md bg-aurora text-white">
+            <FileIcon className="h-4 w-4" aria-hidden />
+          </span>
+          Apri il PDF
+        </button>
       )}
 
       {item.source_url && (

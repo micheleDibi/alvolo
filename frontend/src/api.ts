@@ -121,6 +121,11 @@ export async function fetchImageObjectUrl(id: string): Promise<string> {
   return URL.createObjectURL(blob);
 }
 
+export async function fetchFileObjectUrl(id: string): Promise<string> {
+  const blob = await (await apiFetch(`/api/items/${id}/file`)).blob();
+  return URL.createObjectURL(blob);
+}
+
 export async function ask(question: string): Promise<AskResponse> {
   return (
     await apiFetch("/api/ask", {

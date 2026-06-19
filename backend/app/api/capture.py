@@ -115,10 +115,24 @@ async def capture(
     url = url.strip() if isinstance(url, str) else None
     title = title.strip() if isinstance(title, str) else None
 
-    # Determine content type with precedence image > link > text.
+    # Determine content type with precedence image > pdf > link > text. An uploaded
+    # file arrives in `image_data`; we sniff PDFs so the same field carries either.
     item_id = new_id()
     image_filename: str | None = None
-    if image_data:
+    file_filename: str | None = None
+    file_mime: str | None = None
+    is_pdf = bool(image_data) and (image_data[:5] == b"%PDF-" or image_mime == "application/pdf")
+
+    if image_data and is_pdf:
+        if len(image_data) > settings.max_image_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File too large (max {settings.max_image_bytes // (1024 * 1024)}MB).",
+            )
+        file_mime = "application/pdf"
+        file_filename = storage.save_file(item_id, image_data, file_mime)
+        content_type = ContentType.PDF
+    elif image_data:
         image_mime = _validate_image(image_data, image_mime)
         image_filename = storage.save_image(item_id, image_data, image_mime)
         content_type = ContentType.IMAGE
@@ -129,7 +143,7 @@ async def capture(
     else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Provide at least one of: text, url, image.",
+            detail="Provide at least one of: text, url, image, pdf.",
         )
 
     item = Item(
@@ -142,6 +156,8 @@ async def capture(
         title=title,  # optional hint; the enricher will overwrite with a better title
         image_filename=image_filename,
         image_mime=image_mime,
+        file_filename=file_filename,
+        file_mime=file_mime,
     )
     session.add(item)
     await session.commit()

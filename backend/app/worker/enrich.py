@@ -39,6 +39,21 @@ async def enrich_item(item: Item) -> tuple[dict, dict, str]:
             enrichment["extracted_text"] = result.text
         return enrichment, usage, model
 
+    if item.content_type == ContentType.PDF.value:
+        if not item.file_filename:
+            raise claude.FatalEnrichmentError("PDF item is missing its file.")
+        from .. import storage
+
+        try:
+            pdf_bytes = storage.read_file(item.file_filename)
+        except FileNotFoundError as exc:
+            raise claude.FatalEnrichmentError("PDF file not found on disk.") from exc
+        instruction = (
+            "The user captured this PDF document. Read it, then enrich it; put a faithful "
+            "excerpt of the key text into extracted_text."
+        )
+        return await claude.enrich_pdf(pdf_bytes, instruction)
+
     if item.content_type == ContentType.IMAGE.value:
         if not item.image_filename or not item.image_mime:
             raise claude.FatalEnrichmentError("Image item is missing its file.")

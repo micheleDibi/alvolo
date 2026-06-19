@@ -53,7 +53,7 @@ export default function Capture() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         hidden
         onChange={(e) => setFile(e.target.files?.[0] || null)}
       />
@@ -88,7 +88,7 @@ export default function Capture() {
           <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-elevated text-sky-300">
             <ImagePlus className="h-4 w-4" aria-hidden />
           </span>
-          Scegli o scatta una foto
+          Scegli un'immagine o un PDF
         </Button>
       )}
 

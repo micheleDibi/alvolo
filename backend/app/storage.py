@@ -11,12 +11,13 @@ from pathlib import Path
 
 from .config import settings
 
-# Map common image mime types to a file extension.
+# Map common mime types to a file extension.
 _MIME_EXT = {
     "image/png": ".png",
     "image/jpeg": ".jpg",
     "image/gif": ".gif",
     "image/webp": ".webp",
+    "application/pdf": ".pdf",
 }
 
 
@@ -46,3 +47,11 @@ def delete_image(filename: str | None) -> None:
     path = image_path(filename)
     if path.exists():
         path.unlink()
+
+
+# Generic attachments (e.g. PDF) share the same on-disk layout as images; these
+# aliases keep call sites readable without duplicating logic.
+save_file = save_image
+file_path = image_path
+read_file = read_image
+delete_file = delete_image

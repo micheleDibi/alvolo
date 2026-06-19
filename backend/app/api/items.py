@@ -183,6 +183,17 @@ async def get_item_image(item_id: str, session: AsyncSession = Depends(get_sessi
     return FileResponse(path, media_type=item.image_mime or "application/octet-stream")
 
 
+@router.get("/{item_id}/file")
+async def get_item_file(item_id: str, session: AsyncSession = Depends(get_session)) -> FileResponse:
+    item = await _get_or_404(session, item_id)
+    if not item.file_filename:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item has no file.")
+    path = storage.file_path(item.file_filename)
+    if not path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File missing.")
+    return FileResponse(path, media_type=item.file_mime or "application/octet-stream")
+
+
 @router.patch("/{item_id}", response_model=ItemDetail)
 async def patch_item(
     item_id: str, body: ItemPatch, session: AsyncSession = Depends(get_session)
@@ -231,6 +242,7 @@ async def retry_item(item_id: str, session: AsyncSession = Depends(get_session))
 async def delete_item(item_id: str, session: AsyncSession = Depends(get_session)) -> Response:
     item = await _get_or_404(session, item_id)
     storage.delete_image(item.image_filename)
+    storage.delete_file(item.file_filename)
     await session.delete(item)
     await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

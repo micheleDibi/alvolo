@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { FileText, Link2, Image as ImageIcon, AlertTriangle, ListTodo } from "lucide-react";
+import {
+  FileText,
+  Link2,
+  Image as ImageIcon,
+  File as FileIcon,
+  AlertTriangle,
+  ListTodo,
+} from "lucide-react";
 import type { ContentType, ItemSummary } from "../types";
 import StatusBadge from "./StatusBadge";
 import AuthImage from "./AuthImage";
@@ -8,6 +15,7 @@ const TYPE_ICON: Record<ContentType, typeof FileText> = {
   text: FileText,
   link: Link2,
   image: ImageIcon,
+  pdf: FileIcon,
 };
 
 export default function ItemCard({

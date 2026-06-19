@@ -175,6 +175,23 @@ def test_digest():
         assert isinstance(d["recap"], str) and d["recap"]
 
 
+def test_pdf_capture():
+    pdf = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
+    with TestClient(app) as client:
+        r = client.post("/api/capture", files={"image": ("doc.pdf", pdf, "application/pdf")})
+        assert r.status_code == 202
+        assert r.json()["content_type"] == "pdf"
+        pid = r.json()["id"]
+
+        item = _wait_done(client, pid)
+        assert item["status"] == "done"
+        assert item["file_url"] == f"/api/items/{pid}/file"
+
+        fr = client.get(f"/api/items/{pid}/file")
+        assert fr.status_code == 200
+        assert fr.headers["content-type"].startswith("application/pdf")
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"

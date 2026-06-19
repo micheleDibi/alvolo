@@ -224,3 +224,20 @@ async def enrich_image(image_bytes: bytes, mime: str, instruction: str) -> tuple
     ]
     enrichment, usage = await _run(model, content)
     return enrichment, usage, model
+
+
+async def enrich_pdf(pdf_bytes: bytes, instruction: str) -> tuple[dict, dict, str]:
+    """PDF enrichment with Sonnet (reads documents natively). Returns (enrichment, usage, model)."""
+    model = settings.sonnet_model
+    if not settings.anthropic_enabled:
+        return _mock_enrichment("pdf", instruction), {}, "mock"
+    b64 = base64.standard_b64encode(pdf_bytes).decode("ascii")
+    content = [
+        {
+            "type": "document",
+            "source": {"type": "base64", "media_type": "application/pdf", "data": b64},
+        },
+        {"type": "text", "text": instruction},
+    ]
+    enrichment, usage = await _run(model, content)
+    return enrichment, usage, model
