@@ -74,6 +74,12 @@ export interface AskResponse {
   sources: AskSource[];
 }
 
+export interface DigestResponse {
+  days: number;
+  item_count: number;
+  recap: string;
+}
+
 export interface Meta {
   tags: TagCount[];
   categories: TagCount[];

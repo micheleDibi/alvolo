@@ -9,6 +9,7 @@ import {
 import { getToken } from "./lib/auth";
 import type {
   AskResponse,
+  DigestResponse,
   ItemDetail,
   ItemList,
   ItemPatch,
@@ -138,6 +139,10 @@ export async function askItem(id: string, question?: string): Promise<AskRespons
       body: JSON.stringify({ question }),
     })
   ).json();
+}
+
+export async function getDigest(days = 7): Promise<DigestResponse> {
+  return (await apiFetch(`/api/digest?days=${days}`)).json();
 }
 
 // --- React Query hooks ----------------------------------------------------- //

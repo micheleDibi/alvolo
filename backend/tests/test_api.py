@@ -164,6 +164,17 @@ def test_ask():
         assert client.post("/api/ask", json={"question": "  "}).status_code == 422
 
 
+def test_digest():
+    with TestClient(app) as client:
+        a = client.post("/api/capture", json={"text": "qualcosa di recente da ricapitolare"}).json()["id"]
+        _wait_done(client, a)
+        r = client.get("/api/digest", params={"days": 7})
+        assert r.status_code == 200
+        d = r.json()
+        assert d["item_count"] >= 1
+        assert isinstance(d["recap"], str) and d["recap"]
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"

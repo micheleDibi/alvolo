@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from ..auth import require_auth
 from ..db import get_session
-from ..models import Item
+from ..models import Item, ItemStatus, utcnow
 from ..schemas import _loads_list
 from .. import retrieval
 from ..worker import claude
@@ -32,6 +35,12 @@ class AskSource(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     sources: list[AskSource] = []
+
+
+class DigestResponse(BaseModel):
+    days: int
+    item_count: int
+    recap: str
 
 
 def _title(item: Item) -> str:
@@ -70,6 +79,45 @@ async def ask(body: AskRequest, session: AsyncSession = Depends(get_session)) ->
         answer=text,
         sources=[AskSource(id=it.id, title=_title(it)) for it in items],
     )
+
+
+@router.get("/digest", response_model=DigestResponse)
+async def digest(
+    days: int = Query(default=7, ge=1, le=90),
+    session: AsyncSession = Depends(get_session),
+) -> DigestResponse:
+    since = utcnow() - timedelta(days=days)
+    rows = (
+        await session.execute(
+            select(Item)
+            .where(Item.status == ItemStatus.DONE.value, Item.created_at >= since)
+            .order_by(Item.created_at.desc())
+            .limit(60)
+        )
+    ).scalars().all()
+    if not rows:
+        return DigestResponse(
+            days=days,
+            item_count=0,
+            recap="Nessun elemento catturato nel periodo selezionato.",
+        )
+
+    lines = []
+    for it in rows:
+        title = it.title or it.source_url or "Senza titolo"
+        todos = _loads_list(it.action_items)
+        extra = f" — to-do: {', '.join(todos)}" if todos else ""
+        lines.append(f"- [{it.category or 'altro'}] {title}: {it.summary or ''}{extra}")
+    context = "Items captured recently:\n" + "\n".join(lines)
+    question = (
+        f"Fai un recap degli ultimi {days} giorni delle mie catture. Raggruppa per tema, "
+        "evidenzia 3-5 highlight e poi elenca i to-do ancora aperti. Conciso, con elenchi puntati."
+    )
+    try:
+        recap, _usage = await claude.answer(question, context)
+    except claude.EnrichmentError as exc:
+        raise HTTPException(status_code=502, detail=f"Assistente non disponibile: {exc}")
+    return DigestResponse(days=days, item_count=len(rows), recap=recap)
 
 
 @router.post("/items/{item_id}/ask", response_model=AskResponse)
