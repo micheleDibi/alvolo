@@ -1,27 +1,31 @@
 import { useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { Archive, Trash2 } from "lucide-react";
 
-const ACTION_W = 84; // width of the revealed "Elimina" action
-const OPEN_SNAP = ACTION_W * 0.5; // drag past this → snap open
+const ACTION_W = 84; // width of one revealed action
 const FULL_SWIPE = 0.5; // drag past this fraction of the row width → delete
 
 /**
- * iOS-style swipe-to-delete. Dragging the row right→left reveals a red "Elimina"
- * button; tapping it (or a long full swipe) deletes. Vertical scrolling and the
- * normal tap-through navigation of the wrapped row keep working.
+ * iOS-style swipe actions. Dragging the row right→left reveals an amber
+ * "Archivia" (optional) and a red "Elimina"; a long full swipe deletes.
+ * Vertical scrolling and the normal tap-through navigation keep working.
  */
 export default function SwipeableRow({
   onDelete,
+  onArchive,
   children,
 }: {
   onDelete: () => void;
+  onArchive?: () => void;
   children: ReactNode;
 }) {
   const [tx, setTx] = useState(0); // current translateX, always <= 0
   const [animate, setAnimate] = useState(true);
   const [removing, setRemoving] = useState(false);
   const [maxH, setMaxH] = useState<number | undefined>(undefined);
+
+  const actionsW = onArchive ? ACTION_W * 2 : ACTION_W;
+  const openSnap = actionsW * 0.4;
 
   const rootRef = useRef<HTMLDivElement>(null);
   const activeId = useRef<number | null>(null); // pointer that owns the gesture
@@ -38,7 +42,8 @@ export default function SwipeableRow({
     setTx(0);
   };
 
-  const remove = () => {
+  // Collapse the row out of the list, then fire the action callback.
+  const collapse = (cb: () => void) => {
     if (removing) return;
     const h = rootRef.current?.offsetHeight ?? 0;
     setAnimate(true);
@@ -50,8 +55,11 @@ export default function SwipeableRow({
         setMaxH(0);
       }),
     );
-    window.setTimeout(onDelete, 280);
+    window.setTimeout(cb, 280);
   };
+
+  const remove = () => collapse(onDelete);
+  const archive = () => onArchive && collapse(onArchive);
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -96,7 +104,7 @@ export default function SwipeableRow({
     if (tx <= -width.current * FULL_SWIPE) {
       remove();
     } else {
-      setTx(tx <= -OPEN_SNAP ? -ACTION_W : 0);
+      setTx(tx <= -openSnap ? -actionsW : 0);
     }
   };
 
@@ -119,16 +127,30 @@ export default function SwipeableRow({
       ref={rootRef}
       style={maxH !== undefined ? { maxHeight: maxH } : undefined}
     >
-      <button
-        className="swipe-action"
-        style={{ width: ACTION_W }}
-        tabIndex={-1}
-        aria-label="Elimina"
-        onClick={remove}
-      >
-        <Trash2 size={20} aria-hidden />
-        <span>Elimina</span>
-      </button>
+      <div className="swipe-actions">
+        {onArchive && (
+          <button
+            className="swipe-action swipe-archive"
+            style={{ width: ACTION_W }}
+            tabIndex={-1}
+            aria-label="Archivia"
+            onClick={archive}
+          >
+            <Archive size={20} aria-hidden />
+            <span>Archivia</span>
+          </button>
+        )}
+        <button
+          className="swipe-action swipe-delete"
+          style={{ width: ACTION_W }}
+          tabIndex={-1}
+          aria-label="Elimina"
+          onClick={remove}
+        >
+          <Trash2 size={20} aria-hidden />
+          <span>Elimina</span>
+        </button>
+      </div>
       <div
         className="swipe-track"
         style={{

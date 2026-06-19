@@ -1,20 +1,34 @@
-"""Browse / manage captured items: list, detail, image, retry, delete."""
+"""Browse / manage captured items: list (filter/search), meta, detail, image, patch, retry, delete."""
 
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse
-from sqlalchemy import func
+from sqlalchemy import func, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from ..auth import require_auth
 from ..db import get_session
 from ..models import Item, ItemStatus, utcnow
-from ..schemas import CaptureResponse, ItemDetail, ItemList, item_to_detail, item_to_summary
+from ..schemas import (
+    CaptureResponse,
+    ItemDetail,
+    ItemList,
+    ItemPatch,
+    MetaResponse,
+    TagCount,
+    dumps_list,
+    item_to_detail,
+    item_to_summary,
+)
 from .. import storage
 
 router = APIRouter(prefix="/api/items", tags=["items"], dependencies=[Depends(require_auth)])
+
+_ARCHIVED = ItemStatus.ARCHIVED.value
 
 
 async def _get_or_404(session: AsyncSession, item_id: str) -> Item:
@@ -30,13 +44,50 @@ async def list_items(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     status_filter: str | None = Query(default=None, alias="status"),
+    category: str | None = Query(default=None),
+    tag: str | None = Query(default=None),
+    q: str | None = Query(default=None, description="Free-text search across title/summary/body/tags."),
+    sort: str = Query(default="newest", pattern="^(newest|oldest)$"),
 ) -> ItemList:
     where = []
+
+    # Default view hides archived items; an explicit ?status= shows that bucket.
     if status_filter:
         where.append(Item.status == status_filter)
+    else:
+        where.append(Item.status != _ARCHIVED)
 
+    if category:
+        where.append(Item.category == category)
+
+    if tag:
+        # tags are a JSON array stored as TEXT; match exact membership via json_each.
+        where.append(Item.tags.is_not(None))
+        where.append(
+            text(
+                "EXISTS (SELECT 1 FROM json_each(item.tags) WHERE json_each.value = :tag)"
+            ).bindparams(tag=tag)
+        )
+
+    if q:
+        # Simple, dependency-free search: every token must appear in some text field.
+        # (FTS5/bm25 ranking and semantic search are the planned follow-up.)
+        for token in re.findall(r"\w+", q)[:8]:
+            like = f"%{token}%"
+            where.append(
+                or_(
+                    Item.title.ilike(like),
+                    Item.summary.ilike(like),
+                    Item.category.ilike(like),
+                    Item.tags.ilike(like),
+                    Item.raw_text.ilike(like),
+                    Item.extracted_text.ilike(like),
+                )
+            )
+
+    order = Item.created_at.asc() if sort == "oldest" else Item.created_at.desc()
     total_stmt = select(func.count()).select_from(Item)
-    list_stmt = select(Item).order_by(Item.created_at.desc()).limit(limit).offset(offset)
+    list_stmt = select(Item).order_by(order).limit(limit).offset(offset)
     for clause in where:
         total_stmt = total_stmt.where(clause)
         list_stmt = list_stmt.where(clause)
@@ -44,6 +95,46 @@ async def list_items(
     total = (await session.execute(total_stmt)).scalar_one()
     rows = (await session.execute(list_stmt)).scalars().all()
     return ItemList(items=[item_to_summary(i) for i in rows], total=total)
+
+
+@router.get("/meta", response_model=MetaResponse)
+async def items_meta(session: AsyncSession = Depends(get_session)) -> MetaResponse:
+    """Tag/category/status aggregations that power the inbox filter bar."""
+    tag_rows = (
+        await session.execute(
+            text(
+                """
+                SELECT je.value AS name, COUNT(*) AS count
+                FROM item, json_each(item.tags) je
+                WHERE item.tags IS NOT NULL AND item.status != :archived
+                GROUP BY je.value
+                ORDER BY count DESC, name ASC
+                LIMIT 50
+                """
+            ).bindparams(archived=_ARCHIVED)
+        )
+    ).all()
+    cat_rows = (
+        await session.execute(
+            text(
+                """
+                SELECT category AS name, COUNT(*) AS count
+                FROM item
+                WHERE category IS NOT NULL AND status != :archived
+                GROUP BY category
+                ORDER BY count DESC, name ASC
+                """
+            ).bindparams(archived=_ARCHIVED)
+        )
+    ).all()
+    status_rows = (
+        await session.execute(text("SELECT status, COUNT(*) FROM item GROUP BY status"))
+    ).all()
+    return MetaResponse(
+        tags=[TagCount(name=r[0], count=r[1]) for r in tag_rows],
+        categories=[TagCount(name=r[0], count=r[1]) for r in cat_rows],
+        counts_by_status={r[0]: r[1] for r in status_rows},
+    )
 
 
 @router.get("/{item_id}", response_model=ItemDetail)
@@ -61,6 +152,28 @@ async def get_item_image(item_id: str, session: AsyncSession = Depends(get_sessi
     if not path.exists():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image file missing.")
     return FileResponse(path, media_type=item.image_mime or "application/octet-stream")
+
+
+@router.patch("/{item_id}", response_model=ItemDetail)
+async def patch_item(
+    item_id: str, body: ItemPatch, session: AsyncSession = Depends(get_session)
+) -> ItemDetail:
+    """Partial update — used for archive/unarchive and light edits (title/category/tags)."""
+    item = await _get_or_404(session, item_id)
+    fields = body.model_dump(exclude_unset=True)
+    if "status" in fields and body.status is not None:
+        item.status = body.status.value
+    if "title" in fields:
+        item.title = body.title
+    if "category" in fields:
+        item.category = body.category
+    if "tags" in fields:
+        item.tags = dumps_list(body.tags)
+    item.updated_at = utcnow()
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item_to_detail(item)
 
 
 @router.post("/{item_id}/retry", response_model=CaptureResponse)

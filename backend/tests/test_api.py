@@ -89,6 +89,39 @@ def test_full_flow():
         assert client.get(f"/api/items/{text_id}").status_code == 404
 
 
+def test_meta_filters_and_archive():
+    with TestClient(app) as client:
+        a = client.post("/api/capture", json={"text": "nota uno"}).json()["id"]
+        b = client.post("/api/capture", json={"text": "nota due"}).json()["id"]
+        _wait_done(client, a)
+        _wait_done(client, b)
+
+        # meta aggregations
+        meta = client.get("/api/items/meta").json()
+        assert {"tags", "categories", "counts_by_status"} <= meta.keys()
+        assert "mock" in {c["name"] for c in meta["categories"]}
+
+        # search / category / tag filters (mock enrichment tags everything "mock")
+        assert client.get("/api/items", params={"q": "mock"}).json()["total"] >= 2
+        assert client.get("/api/items", params={"category": "mock"}).json()["total"] >= 2
+        assert client.get("/api/items", params={"tag": "mock"}).json()["total"] >= 2
+        assert client.get("/api/items", params={"q": "zzzznotfound"}).json()["total"] == 0
+
+        # archive `a`: excluded from default + status=done, included in status=archived
+        r = client.patch(f"/api/items/{a}", json={"status": "archived"})
+        assert r.status_code == 200 and r.json()["status"] == "archived"
+        default_ids = {i["id"] for i in client.get("/api/items").json()["items"]}
+        assert a not in default_ids and b in default_ids
+        archived_ids = {
+            i["id"] for i in client.get("/api/items", params={"status": "archived"}).json()["items"]
+        }
+        assert a in archived_ids
+
+        # restore
+        assert client.patch(f"/api/items/{a}", json={"status": "done"}).json()["status"] == "done"
+        assert a in {i["id"] for i in client.get("/api/items").json()["items"]}
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"

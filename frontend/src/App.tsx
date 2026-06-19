@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import { Inbox as InboxIcon, Plus, Settings as SettingsIcon, Plane } from "lucide-react";
+import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import Inbox from "./pages/Inbox";
 import ItemDetail from "./pages/ItemDetail";
@@ -87,6 +88,18 @@ export default function App() {
           <Tab key={t.to} {...t} />
         ))}
       </nav>
+
+      <Toaster
+        theme="dark"
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-foreground)",
+          },
+        }}
+      />
     </div>
   );
 }

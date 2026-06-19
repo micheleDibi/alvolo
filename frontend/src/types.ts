@@ -32,3 +32,29 @@ export interface ItemList {
   items: ItemSummary[];
   total: number;
 }
+
+export interface ItemQuery {
+  status?: string;
+  category?: string;
+  tag?: string;
+  q?: string;
+  sort?: "newest" | "oldest";
+}
+
+export interface ItemPatch {
+  status?: ItemStatus;
+  title?: string | null;
+  category?: string | null;
+  tags?: string[];
+}
+
+export interface TagCount {
+  name: string;
+  count: number;
+}
+
+export interface Meta {
+  tags: TagCount[];
+  categories: TagCount[];
+  counts_by_status: Record<string, number>;
+}

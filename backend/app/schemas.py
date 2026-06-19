@@ -108,6 +108,28 @@ class ItemList(BaseModel):
     total: int
 
 
+class ItemPatch(BaseModel):
+    """Partial update of an item (used for archive/unarchive and light edits)."""
+
+    status: ItemStatus | None = None
+    title: str | None = None
+    category: str | None = None
+    tags: list[str] | None = None
+
+
+class TagCount(BaseModel):
+    name: str
+    count: int
+
+
+class MetaResponse(BaseModel):
+    """Aggregations powering the inbox filter bar."""
+
+    tags: list[TagCount]
+    categories: list[TagCount]
+    counts_by_status: dict[str, int]
+
+
 # --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #

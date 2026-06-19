@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Link2,
@@ -11,8 +12,10 @@ import {
   ScrollText,
   ChevronDown,
   Trash2,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
-import { useDeleteItem, useItem, useRetryItem } from "../api";
+import { useDeleteItem, useItem, usePatchItem, useRetryItem } from "../api";
 import StatusBadge from "../components/StatusBadge";
 import AuthImage from "../components/AuthImage";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +49,7 @@ export default function ItemDetail() {
   const { data: item, isLoading, error } = useItem(id);
   const retry = useRetryItem();
   const del = useDeleteItem();
+  const patch = usePatchItem();
   const [showExtracted, setShowExtracted] = useState(false);
 
   if (isLoading) return <Centered>Carico…</Centered>;
@@ -55,6 +59,24 @@ export default function ItemDetail() {
   const onDelete = async () => {
     if (!confirm("Eliminare questo elemento?")) return;
     await del.mutateAsync(id);
+    navigate("/");
+  };
+
+  const archived = item.status === "archived";
+  const onArchiveToggle = async () => {
+    const prev = item.status;
+    await patch.mutateAsync({
+      id,
+      patch: { status: archived ? "done" : "archived" },
+    });
+    if (!archived) {
+      toast("Archiviato", {
+        action: {
+          label: "Annulla",
+          onClick: () => patch.mutate({ id, patch: { status: prev } }),
+        },
+      });
+    }
     navigate("/");
   };
 
@@ -217,15 +239,35 @@ export default function ItemDetail() {
         <span> · {item.source}</span>
       </div>
 
-      <Button
-        variant="danger"
-        className="w-full"
-        disabled={del.isPending}
-        onClick={onDelete}
-      >
-        <Trash2 className="h-4 w-4" aria-hidden />
-        {del.isPending ? "Elimino…" : "Elimina"}
-      </Button>
+      <div className="flex gap-2.5">
+        <Button
+          variant="default"
+          className="flex-1"
+          disabled={patch.isPending}
+          onClick={onArchiveToggle}
+        >
+          {archived ? (
+            <>
+              <ArchiveRestore className="h-4 w-4" aria-hidden />
+              Ripristina
+            </>
+          ) : (
+            <>
+              <Archive className="h-4 w-4" aria-hidden />
+              Archivia
+            </>
+          )}
+        </Button>
+        <Button
+          variant="danger"
+          className="flex-1"
+          disabled={del.isPending}
+          onClick={onDelete}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden />
+          {del.isPending ? "Elimino…" : "Elimina"}
+        </Button>
+      </div>
     </article>
   );
 }
