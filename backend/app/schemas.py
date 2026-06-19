@@ -96,6 +96,7 @@ class ItemSummary(BaseModel):
     category: str | None
     tags: list[str]
     action_items: list[str]
+    remind_at: datetime | None
     has_image: bool
     source_url: str | None
     error_message: str | None
@@ -135,6 +136,7 @@ class ItemPatch(BaseModel):
     category: str | None = None
     tags: list[str] | None = None
     action_items: list[str] | None = None
+    remind_at: datetime | None = None
 
 
 class TagCount(BaseModel):
@@ -181,6 +183,7 @@ def item_to_summary(item: Item) -> ItemSummary:
         category=item.category,
         tags=_loads_list(item.tags),
         action_items=_loads_list(item.action_items),
+        remind_at=item.remind_at,
         has_image=bool(item.image_filename),
         source_url=item.source_url,
         error_message=item.error_message,

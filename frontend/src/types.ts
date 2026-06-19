@@ -12,6 +12,7 @@ export interface ItemSummary {
   category: string | null;
   tags: string[];
   action_items: string[];
+  remind_at: string | null;
   has_image: boolean;
   source_url: string | null;
   error_message: string | null;
@@ -49,6 +50,7 @@ export interface ItemQuery {
   tag?: string;
   q?: string;
   has_todo?: boolean;
+  snoozed?: boolean;
   sort?: "newest" | "oldest";
 }
 
@@ -58,6 +60,7 @@ export interface ItemPatch {
   category?: string | null;
   tags?: string[];
   action_items?: string[];
+  remind_at?: string | null;
 }
 
 export interface TagCount {

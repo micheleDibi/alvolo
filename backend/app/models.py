@@ -72,6 +72,7 @@ class Item(SQLModel, table=True):
     extracted_text: str | None = None  # OCR (images) / cleaned body (links)
     action_items: str | None = None    # JSON: list[str] — actionable to-dos found in the content
     related_item_ids: str | None = None  # JSON: list[str] — ids of semantically related items
+    remind_at: datetime | None = None  # snooze: hidden from the inbox until this time
 
     # --- observability / cost (future-proof) ---
     model_used: str | None = None

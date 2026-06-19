@@ -7,6 +7,7 @@ import {
   Mic,
   AlertTriangle,
   ListTodo,
+  Clock,
 } from "lucide-react";
 import type { ContentType, ItemSummary } from "../types";
 import StatusBadge from "./StatusBadge";
@@ -58,6 +59,15 @@ export default function ItemCard({
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">
               <ListTodo className="h-3 w-3" aria-hidden />
               {item.action_items.length}
+            </span>
+          )}
+          {item.remind_at && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              <Clock className="h-3 w-3" aria-hidden />
+              {new Date(item.remind_at).toLocaleDateString([], {
+                day: "numeric",
+                month: "short",
+              })}
             </span>
           )}
         </div>

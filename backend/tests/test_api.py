@@ -9,6 +9,7 @@ import base64
 import os
 import tempfile
 import time
+from datetime import datetime, timedelta, timezone
 
 # Configure the environment BEFORE importing the app (settings is read at import).
 _TMP = tempfile.mkdtemp(prefix="alvolo-test-")
@@ -223,6 +224,25 @@ def test_stats_and_export():
 
         em = client.get("/api/export", params={"format": "markdown"})
         assert em.status_code == 200 and em.text.startswith("# AlVolo")
+
+
+def test_snooze():
+    with TestClient(app) as client:
+        a = client.post("/api/capture", json={"text": "da posticipare"}).json()["id"]
+        _wait_done(client, a)
+
+        future = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+        assert client.patch(f"/api/items/{a}", json={"remind_at": future}).status_code == 200
+
+        # hidden from the default inbox, visible in the snoozed view
+        assert a not in {i["id"] for i in client.get("/api/items").json()["items"]}
+        assert a in {
+            i["id"] for i in client.get("/api/items", params={"snoozed": "true"}).json()["items"]
+        }
+
+        # wake it (clear remind_at) -> back in the inbox
+        assert client.patch(f"/api/items/{a}", json={"remind_at": None}).status_code == 200
+        assert a in {i["id"] for i in client.get("/api/items").json()["items"]}
 
 
 def test_auth_enforced():

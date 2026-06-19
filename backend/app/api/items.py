@@ -50,9 +50,19 @@ async def list_items(
     tag: str | None = Query(default=None),
     q: str | None = Query(default=None, description="Free-text search across title/summary/body/tags."),
     has_todo: bool = Query(default=False, description="Only items with open action items (to-dos)."),
+    snoozed: bool = Query(default=False, description="Show only snoozed items (remind_at in the future)."),
     sort: str = Query(default="newest", pattern="^(newest|oldest)$"),
 ) -> ItemList:
     where = []
+
+    # Snoozed items are hidden from every view until their remind_at passes; the
+    # dedicated snoozed view ("In arrivo") shows exactly the still-future ones.
+    now = utcnow()
+    if snoozed:
+        where.append(Item.remind_at.is_not(None))
+        where.append(Item.remind_at > now)
+    else:
+        where.append(or_(Item.remind_at.is_(None), Item.remind_at <= now))
 
     if has_todo:
         where.append(Item.action_items.is_not(None))
@@ -211,6 +221,8 @@ async def patch_item(
         item.tags = dumps_list(body.tags)
     if "action_items" in fields:
         item.action_items = dumps_list(body.action_items)
+    if "remind_at" in fields:
+        item.remind_at = body.remind_at
     item.updated_at = utcnow()
     session.add(item)
     await session.commit()

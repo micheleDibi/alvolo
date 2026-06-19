@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronRight,
   Check,
+  Clock,
   Network,
   Trash2,
   Archive,
@@ -111,6 +112,25 @@ export default function ItemDetail() {
     } catch {
       /* ignore */
     }
+  };
+
+  const snooze = (date: Date) => {
+    patch.mutate({ id, patch: { remind_at: date.toISOString() } });
+    toast(`Posticipato a ${date.toLocaleString()}`);
+    navigate("/");
+  };
+  const wake = () => patch.mutate({ id, patch: { remind_at: null } });
+  const tomorrow9 = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+    return d;
+  };
+  const nextWeek = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    d.setHours(9, 0, 0, 0);
+    return d;
   };
 
   return (
@@ -331,6 +351,32 @@ export default function ItemDetail() {
           ))}
         </div>
       )}
+
+      <section>
+        <SectionTitle icon={Clock}>Posticipa</SectionTitle>
+        {item.remind_at ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/60 glass px-3.5 py-2.5">
+            <span className="text-sm text-muted-foreground">
+              In arrivo il {new Date(item.remind_at).toLocaleString()}
+            </span>
+            <Button variant="ghost" size="sm" onClick={wake}>
+              Sveglia ora
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="ghost" size="sm" onClick={() => snooze(new Date(Date.now() + 3600000))}>
+              1 ora
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => snooze(tomorrow9())}>
+              Domani
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => snooze(nextWeek())}>
+              Tra una settimana
+            </Button>
+          </div>
+        )}
+      </section>
 
       <section className="rounded-lg border border-border bg-card/40 glass p-4">
         <SectionTitle icon={Sparkles}>Approfondisci con l'AI</SectionTitle>

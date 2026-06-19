@@ -64,6 +64,7 @@ export async function listItems(
   if (query.tag) p.set("tag", query.tag);
   if (query.q) p.set("q", query.q);
   if (query.has_todo) p.set("has_todo", "true");
+  if (query.snoozed) p.set("snoozed", "true");
   if (query.sort) p.set("sort", query.sort);
   return (await apiFetch(`/api/items?${p.toString()}`)).json();
 }
