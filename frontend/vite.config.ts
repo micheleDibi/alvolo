@@ -34,6 +34,7 @@ export default defineConfig({
       manifest: {
         name: "AlVolo",
         short_name: "AlVolo",
+        lang: "it",
         description: "Cattura al volo: screenshot, link e idee, arricchiti dall'AI.",
         start_url: "/",
         scope: "/",

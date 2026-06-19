@@ -106,6 +106,10 @@ L'app gira su `127.0.0.1:8000`, con DB e immagini nel volume `alvolo_data` (pers
 Per usare un'altra porta, imposta `APP_PORT` nel `.env` (es. `APP_PORT=9090` → l'app sarà
 su `127.0.0.1:9090`). Il container resta sempre sulla 8000 internamente.
 
+> Se il reverse proxy gira su **un'altra macchina** (es. Nginx Proxy Manager sulla LAN),
+> `127.0.0.1` non è raggiungibile da fuori: imposta `APP_BIND` nel `.env` con l'IP LAN
+> dell'host (es. `APP_BIND=192.168.40.13`) o `0.0.0.0`, poi `docker compose up -d`.
+
 **3. Reverse proxy + HTTPS** — scegli UNA delle due:
 
 <details>
@@ -175,6 +179,7 @@ git pull && docker compose up -d --build
 | `DATA_DIR` | `./data` | DB + uploads; in Docker = `/data` (volume) |
 | `WORKER_CONCURRENCY` | `2` | chiamate Claude in parallelo |
 | `APP_PORT` | `8000` | porta host pubblicata da docker compose |
+| `APP_BIND` | `127.0.0.1` | interfaccia host del bind; IP LAN o `0.0.0.0` se il proxy è su un'altra macchina |
 
 ## Struttura del codice
 

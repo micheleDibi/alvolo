@@ -261,6 +261,44 @@
   }
 }
 
+/* iOS-style swipe-to-delete row (SwipeableRow), themed for Aurora dark. */
+@layer components {
+  .swipe {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+  }
+  .swipe.removing {
+    transition: max-height 0.28s ease, opacity 0.28s ease;
+    opacity: 0;
+  }
+  .swipe-track {
+    position: relative;
+    /* opaque page-colored backdrop so the translucent card never reveals the
+       red action until the row is actually dragged open */
+    background: var(--color-background);
+    will-change: transform;
+    touch-action: pan-y;
+  }
+  .swipe-action {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 0;
+    background: #e11d48;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
 /* Respect reduced-motion: kill entrance/pulse/blob/shimmer + transitions. */
 @media (prefers-reduced-motion: reduce) {
   *,

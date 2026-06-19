@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { getToken } from "./lib/auth";
 import type { ItemDetail, ItemList } from "./types";
+export type { ItemList } from "./types";
 
 export class ApiError extends Error {
   status: number;
@@ -141,6 +142,27 @@ export function useRetryItem() {
 }
 
 export function useDeleteItem() {
-  const invalidate = useInvalidateItems();
-  return useMutation({ mutationFn: deleteItem, onSuccess: invalidate });
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteItem,
+    // Optimistically drop the row, snapshot for rollback, reconcile when settled.
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["items"] });
+      const prev = qc.getQueryData<ItemList>(["items"]);
+      if (prev) {
+        qc.setQueryData<ItemList>(["items"], {
+          ...prev,
+          items: prev.items.filter((i) => i.id !== id),
+          total: Math.max(0, prev.total - 1),
+        });
+      }
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["items"], ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
 }

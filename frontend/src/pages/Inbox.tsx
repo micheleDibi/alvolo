@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { Lock, AlertTriangle, Sparkles, Plus, Settings as SettingsIcon } from "lucide-react";
-import { useItems } from "../api";
+import { useItems, useDeleteItem } from "../api";
 import { ApiError } from "../api";
 import ItemCard from "../components/ItemCard";
+import SwipeableRow from "../components/SwipeableRow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -44,6 +45,7 @@ function SkeletonCard() {
 
 export default function Inbox() {
   const { data, isLoading, error } = useItems();
+  const del = useDeleteItem();
 
   if (error instanceof ApiError && error.status === 401) {
     return (
@@ -98,7 +100,9 @@ export default function Inbox() {
   return (
     <div className="space-y-3">
       {data.items.map((item, i) => (
-        <ItemCard key={item.id} item={item} index={i} />
+        <SwipeableRow key={item.id} onDelete={() => del.mutate(item.id)}>
+          <ItemCard item={item} index={i} />
+        </SwipeableRow>
       ))}
     </div>
   );
