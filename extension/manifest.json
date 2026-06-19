@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "AlVolo — Cattura al volo",
+  "version": "0.1.0",
+  "description": "Salva pagine, link e selezioni di testo nella tua inbox AlVolo, con un clic.",
+  "permissions": ["contextMenus", "activeTab", "storage", "notifications"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "Salva in AlVolo" },
+  "options_page": "options.html",
+  "icons": { "128": "icon-128.png" }
+}

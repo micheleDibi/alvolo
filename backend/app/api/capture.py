@@ -136,7 +136,7 @@ async def capture(
         id=item_id,
         content_type=content_type.value,
         status=ItemStatus.CAPTURING.value,
-        source=source if source in ("app", "shortcut") else "app",
+        source=source if source in ("app", "shortcut", "extension") else "app",
         raw_text=text,
         source_url=url,
         title=title,  # optional hint; the enricher will overwrite with a better title
