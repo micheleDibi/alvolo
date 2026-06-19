@@ -25,6 +25,7 @@ import { useDeleteItem, useItem, usePatchItem, useRetryItem } from "../api";
 import type { ContentType } from "../types";
 import StatusBadge from "../components/StatusBadge";
 import AuthImage from "../components/AuthImage";
+import AskBox from "../components/AskBox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -297,6 +298,11 @@ export default function ItemDetail() {
           ))}
         </div>
       )}
+
+      <section className="rounded-lg border border-border bg-card/40 glass p-4">
+        <SectionTitle icon={Sparkles}>Approfondisci con l'AI</SectionTitle>
+        <AskBox itemId={item.id} placeholder="Chiedi qualcosa su questo elemento…" />
+      </section>
 
       <div className="tnum text-xs text-muted-foreground">
         <span>{new Date(item.created_at + "Z").toLocaleString()}</span>

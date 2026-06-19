@@ -143,6 +143,27 @@ def test_action_items_related_and_todo_filter():
         assert r.status_code == 200 and r.json()["action_items"] == []
 
 
+def test_ask():
+    with TestClient(app) as client:
+        a = client.post(
+            "/api/capture", json={"text": "nota sul caffè arabica e il basilico fresco"}
+        ).json()["id"]
+        _wait_done(client, a)
+
+        r = client.post("/api/ask", json={"question": "cosa ho salvato sul caffè?"})
+        assert r.status_code == 200
+        body = r.json()
+        assert isinstance(body["answer"], str) and body["answer"]
+        assert any(s["id"] == a for s in body["sources"])  # retrieved the caffè note
+
+        # per-item deepen
+        r2 = client.post(f"/api/items/{a}/ask", json={})
+        assert r2.status_code == 200 and r2.json()["answer"]
+
+        # empty question -> 422
+        assert client.post("/api/ask", json={"question": "  "}).status_code == 422
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"

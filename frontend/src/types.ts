@@ -64,6 +64,16 @@ export interface TagCount {
   count: number;
 }
 
+export interface AskSource {
+  id: string;
+  title: string;
+}
+
+export interface AskResponse {
+  answer: string;
+  sources: AskSource[];
+}
+
 export interface Meta {
   tags: TagCount[];
   categories: TagCount[];

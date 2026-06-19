@@ -1,11 +1,18 @@
 import { NavLink, Route, Routes } from "react-router-dom";
-import { Inbox as InboxIcon, Plus, Settings as SettingsIcon, Plane } from "lucide-react";
+import {
+  Inbox as InboxIcon,
+  Plus,
+  Settings as SettingsIcon,
+  Plane,
+  Sparkles,
+} from "lucide-react";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import Inbox from "./pages/Inbox";
 import ItemDetail from "./pages/ItemDetail";
 import Capture from "./pages/Capture";
 import Settings from "./pages/Settings";
+import Ask from "./pages/Ask";
 
 type TabDef = {
   to: string;
@@ -17,6 +24,7 @@ type TabDef = {
 
 const TABS: TabDef[] = [
   { to: "/", end: true, label: "Inbox", icon: InboxIcon },
+  { to: "/ask", label: "Chiedi", icon: Sparkles },
   { to: "/capture", label: "Cattura", icon: Plus, primary: true },
   { to: "/settings", label: "Impostazioni", icon: SettingsIcon },
 ];
@@ -78,6 +86,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Inbox />} />
           <Route path="/item/:id" element={<ItemDetail />} />
+          <Route path="/ask" element={<Ask />} />
           <Route path="/capture" element={<Capture />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from .api import capture, items
+from .api import ask, capture, items
 from .auth import limiter
 from .config import settings
 from .db import engine, init_db
@@ -63,6 +63,7 @@ app.add_middleware(
 
 app.include_router(capture.router)
 app.include_router(items.router)
+app.include_router(ask.router)
 
 
 @app.get("/api/health", tags=["health"])

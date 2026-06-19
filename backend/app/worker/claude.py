@@ -92,6 +92,60 @@ def _mock_enrichment(kind: str, hint: str) -> dict:
     }
 
 
+ASK_SYSTEM = (
+    "You are the assistant of 'AlVolo', a personal quick-capture inbox. Answer the user's "
+    "question using ONLY the captured items provided as context. Be concise and genuinely "
+    "useful. Always answer in the same language as the question. Cite the items you rely on "
+    "inline as [n], using their number in the context. If the captures do not contain enough "
+    "to answer, say so plainly instead of inventing facts."
+)
+
+
+def _mock_answer(question: str) -> str:
+    return (
+        "[mock] Senza ANTHROPIC_API_KEY rispondo in modalità demo: ho recuperato dalla tua "
+        f"inbox gli elementi più pertinenti alla domanda «{question.strip()}» e te li mostro "
+        "qui sotto come fonti. Configura la chiave Anthropic per ottenere risposte reali."
+    )
+
+
+async def answer(question: str, context: str) -> tuple[str, dict]:
+    """Free-form Q&A grounded on captured items. Returns (answer_text, usage_dict)."""
+    if not settings.anthropic_enabled:
+        return _mock_answer(question), {}
+
+    client = _get_client()
+    try:
+        import anthropic
+    except ImportError as exc:  # pragma: no cover
+        raise FatalEnrichmentError("anthropic SDK not installed") from exc
+
+    try:
+        message = await client.messages.create(
+            model=settings.sonnet_model,
+            max_tokens=settings.anthropic_max_tokens,
+            system=[{"type": "text", "text": ASK_SYSTEM, "cache_control": {"type": "ephemeral"}}],
+            messages=[{"role": "user", "content": f"{context}\n\nQuestion: {question}"}],
+        )
+    except (anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.APITimeoutError) as exc:
+        raise TransientEnrichmentError(str(exc)) from exc
+    except anthropic.APIStatusError as exc:
+        if exc.status_code and exc.status_code >= 500:
+            raise TransientEnrichmentError(str(exc)) from exc
+        raise FatalEnrichmentError(f"API error {exc.status_code}: {exc}") from exc
+    except anthropic.APIError as exc:
+        raise TransientEnrichmentError(str(exc)) from exc
+
+    text = "".join(
+        getattr(b, "text", "") for b in message.content if getattr(b, "type", None) == "text"
+    ).strip()
+    usage = {
+        "input_tokens": getattr(message.usage, "input_tokens", None),
+        "output_tokens": getattr(message.usage, "output_tokens", None),
+    }
+    return text or "(nessuna risposta)", usage
+
+
 async def _run(model: str, content: list | str) -> tuple[dict, dict]:
     """Call Claude with a forced tool and return (enrichment_dict, usage_dict)."""
     client = _get_client()

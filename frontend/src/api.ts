@@ -7,7 +7,14 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 import { getToken } from "./lib/auth";
-import type { ItemDetail, ItemList, ItemPatch, ItemQuery, Meta } from "./types";
+import type {
+  AskResponse,
+  ItemDetail,
+  ItemList,
+  ItemPatch,
+  ItemQuery,
+  Meta,
+} from "./types";
 export type { ItemList } from "./types";
 
 export class ApiError extends Error {
@@ -111,6 +118,26 @@ export async function deleteItem(id: string) {
 export async function fetchImageObjectUrl(id: string): Promise<string> {
   const blob = await (await apiFetch(`/api/items/${id}/image`)).blob();
   return URL.createObjectURL(blob);
+}
+
+export async function ask(question: string): Promise<AskResponse> {
+  return (
+    await apiFetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    })
+  ).json();
+}
+
+export async function askItem(id: string, question?: string): Promise<AskResponse> {
+  return (
+    await apiFetch(`/api/items/${id}/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    })
+  ).json();
 }
 
 // --- React Query hooks ----------------------------------------------------- //
