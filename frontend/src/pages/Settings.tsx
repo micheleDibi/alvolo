@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Eye,
@@ -15,9 +15,17 @@ import {
   BarChart3,
   Download,
   ChevronRight,
+  Bell,
 } from "lucide-react";
 import { getToken, setToken } from "../lib/auth";
 import { getThemePref, setThemePref, type ThemePref } from "../lib/theme";
+import {
+  getPushState,
+  subscribePush,
+  unsubscribePush,
+  isPushSupported,
+  type PushState,
+} from "../lib/push";
 import { exportData } from "../api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,10 +53,35 @@ export default function Settings() {
   const [copied, setCopied] = useState(false);
   const [show, setShow] = useState(false);
   const [theme, setTheme] = useState<ThemePref>(getThemePref());
+  const [push, setPush] = useState<PushState | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    getPushState()
+      .then(setPush)
+      .catch(() => setPush({ enabled: false, subscribed: false }));
+  }, []);
 
   const pickTheme = (v: ThemePref) => {
     setTheme(v);
     setThemePref(v);
+  };
+
+  const togglePush = async () => {
+    if (!push) return;
+    setPushBusy(true);
+    try {
+      if (push.subscribed) {
+        await unsubscribePush();
+        setPush({ ...push, subscribed: false });
+      } else if (await subscribePush()) {
+        setPush({ ...push, subscribed: true });
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setPushBusy(false);
+    }
   };
 
   const doExport = async (format: "json" | "markdown") => {
@@ -113,6 +146,39 @@ export default function Settings() {
               </button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-sky-300" aria-hidden />
+            Notifiche
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!isPushSupported() ? (
+            <p className="text-[13px] text-muted-foreground">
+              Le notifiche push non sono supportate da questo browser.
+            </p>
+          ) : push && !push.enabled ? (
+            <p className="text-[13px] text-muted-foreground">
+              Non configurate sul server (imposta le chiavi VAPID nel <code>.env</code>).
+            </p>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[13px] text-muted-foreground">
+                Avviso quando un elemento è pronto o scatta un promemoria.
+              </p>
+              <Button
+                variant={push?.subscribed ? "ghost" : "aurora"}
+                disabled={!push || pushBusy}
+                onClick={togglePush}
+              >
+                {push?.subscribed ? "Disattiva" : "Attiva"}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

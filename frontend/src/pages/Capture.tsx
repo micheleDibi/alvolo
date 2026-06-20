@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { ImagePlus, X, AlertTriangle, Sparkles, Loader2, Mic, Square } from "lucide-react";
 import { useCaptureImage, useCaptureLink, useCaptureText } from "../api";
+import { enqueue } from "../lib/offlineQueue";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
@@ -89,6 +91,16 @@ export default function Capture() {
       }
       navigate("/");
     } catch (e) {
+      // Offline? queue text/link captures and sync them when back online.
+      if (!file && !navigator.onLine) {
+        const value = text.trim();
+        if (value) {
+          enqueue({ kind: URL_RE.test(value) ? "link" : "text", value });
+          toast("Salvato offline — sincronizzo quando torni online");
+          navigate("/");
+          return;
+        }
+      }
       setErr((e as Error).message);
     }
   };

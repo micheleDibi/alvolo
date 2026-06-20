@@ -56,6 +56,8 @@ export default defineConfig({
         navigateFallback: "/index.html",
         // Don't let the SPA fallback swallow API requests.
         navigateFallbackDenylist: [/^\/api\//],
+        // Inject our push / notification handlers into the generated SW.
+        importScripts: ["custom-sw.js"],
         runtimeCaching: [
           {
             // Items list + detail: fresh when online, last-known when offline.

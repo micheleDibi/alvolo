@@ -60,6 +60,16 @@ class Settings(BaseSettings):
     # Model size: tiny | base | small | medium | large-v3 (bigger = better/slower).
     whisper_model: str = "base"
 
+    # --- web push (VAPID) ---
+    # Generate a key pair once; leave empty to disable push notifications.
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = "mailto:admin@example.com"
+
+    @property
+    def push_enabled(self) -> bool:
+        return bool(self.vapid_public_key and self.vapid_private_key)
+
     # --- misc ---
     env: str = "development"
 

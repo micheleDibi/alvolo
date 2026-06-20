@@ -24,6 +24,7 @@ from ..config import settings
 from ..db import SessionFactory
 from ..events import publish_item
 from ..models import Item, ItemStatus, utcnow
+from .. import push
 from ..schemas import EnrichmentResult, dumps_list
 from . import claude
 from .enrich import enrich_item
@@ -37,6 +38,7 @@ class Worker:
         # asyncio primitives are created in start() so they bind to the loop that is
         # actually running the app (not whatever loop happened to import this module).
         self._task: asyncio.Task | None = None
+        self._reminder_task: asyncio.Task | None = None
         self._stop: asyncio.Event | None = None
         self._sem: asyncio.Semaphore | None = None
         self._inflight: set[asyncio.Task] = set()
@@ -47,17 +49,19 @@ class Worker:
         self._inflight = set()
         await self._boot_recovery()
         self._task = asyncio.create_task(self._run(), name="alvolo-worker")
+        self._reminder_task = asyncio.create_task(self._reminders_loop(), name="alvolo-reminders")
         logger.info("worker started (concurrency=%s)", settings.worker_concurrency)
 
     async def stop(self) -> None:
         if self._stop is not None:
             self._stop.set()
-        if self._task:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
+        for task in (self._task, self._reminder_task):
+            if task:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
         if self._inflight:
             await asyncio.gather(*self._inflight, return_exceptions=True)
         logger.info("worker stopped")
@@ -73,6 +77,37 @@ class Worker:
             await session.commit()
             if res.rowcount:
                 logger.info("boot recovery: requeued %s stuck item(s)", res.rowcount)
+
+    async def _reminders_loop(self) -> None:
+        """Fire due snoozes: clear remind_at, push a reminder, and resurface the item."""
+        while not self._stop.is_set():
+            await self._sleep(30)
+            if self._stop.is_set():
+                break
+            try:
+                async with SessionFactory() as session:
+                    now = utcnow()
+                    due = (
+                        await session.execute(
+                            select(Item).where(
+                                Item.remind_at.is_not(None), Item.remind_at <= now
+                            )
+                        )
+                    ).scalars().all()
+                    for it in due:
+                        it.remind_at = None
+                        it.updated_at = now
+                        session.add(it)
+                    await session.commit()
+                for it in due:
+                    publish_item(it.id, it.status)
+                    await push.notify(
+                        f"Promemoria: {it.title or 'Elemento'}",
+                        it.summary or "",
+                        url=f"/item/{it.id}",
+                    )
+            except Exception:  # noqa: BLE001 - never let the loop die
+                logger.exception("reminder sweep failed")
 
     async def _sleep(self, seconds: float) -> None:
         """Sleep, but wake immediately if a stop was requested."""
@@ -193,6 +228,11 @@ class Worker:
             session.add(item)
             await session.commit()
             publish_item(item.id, item.status)
+            await push.notify(
+                f"{item.title or 'Elemento'} è pronto",
+                item.summary or "Arricchimento completato.",
+                url=f"/item/{item.id}",
+            )
             logger.info("enriched %s (%s) via %s", item_id, item.content_type, model)
 
     async def _fail_or_retry(

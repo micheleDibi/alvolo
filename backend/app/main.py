@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from .api import ask, capture, events, export, items, stats
+from .api import ask, capture, events, export, items, push, stats
 from .auth import limiter
 from .config import settings
 from .db import engine, init_db
@@ -67,6 +67,7 @@ app.include_router(ask.router)
 app.include_router(stats.router)
 app.include_router(export.router)
 app.include_router(events.router)
+app.include_router(push.router)
 
 
 @app.get("/api/health", tags=["health"])

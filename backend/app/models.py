@@ -83,3 +83,13 @@ class Item(SQLModel, table=True):
     error_message: str | None = None  # user-facing
     attempts: int = 0
     last_error_at: datetime | None = None
+
+
+class PushSubscription(SQLModel, table=True):
+    """A Web Push subscription (one per browser/device); single-user app."""
+
+    __tablename__ = "push_subscription"
+
+    endpoint: str = Field(primary_key=True)
+    subscription: str  # JSON: the full PushSubscription object from the browser
+    created_at: datetime = Field(default_factory=utcnow)

@@ -245,6 +245,20 @@ def test_snooze():
         assert a in {i["id"] for i in client.get("/api/items").json()["items"]}
 
 
+def test_push_subscribe():
+    with TestClient(app) as client:
+        k = client.get("/api/push/key").json()
+        assert "enabled" in k and "key" in k  # disabled (no VAPID keys) in tests
+        sub = {
+            "endpoint": "https://example.com/push/abc",
+            "keys": {"p256dh": "x", "auth": "y"},
+        }
+        assert client.post("/api/push/subscribe", json={"subscription": sub}).json()["ok"]
+        assert client.post(
+            "/api/push/unsubscribe", json={"endpoint": sub["endpoint"]}
+        ).json()["ok"]
+
+
 def test_auth_enforced():
     # Toggle auth on for this test (require_auth reads settings live).
     settings.capture_token = "secret-token"

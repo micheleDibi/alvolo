@@ -157,6 +157,26 @@ export async function getStats(): Promise<StatsResponse> {
   return (await apiFetch("/api/stats")).json();
 }
 
+export async function pushKey(): Promise<{ enabled: boolean; key: string }> {
+  return (await apiFetch("/api/push/key")).json();
+}
+
+export async function pushSubscribe(subscription: unknown) {
+  return apiFetch("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription }),
+  });
+}
+
+export async function pushUnsubscribe(endpoint: string) {
+  return apiFetch("/api/push/unsubscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint }),
+  });
+}
+
 export async function exportData(format: "json" | "markdown"): Promise<Blob> {
   return (await apiFetch(`/api/export?format=${format}`)).blob();
 }

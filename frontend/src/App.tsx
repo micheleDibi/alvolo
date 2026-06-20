@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { NavLink, Route, Routes } from "react-router-dom";
 import {
   Inbox as InboxIcon,
@@ -9,6 +11,7 @@ import {
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { useItemEvents } from "./api";
+import { flushQueue } from "./lib/offlineQueue";
 import Inbox from "./pages/Inbox";
 import ItemDetail from "./pages/ItemDetail";
 import Capture from "./pages/Capture";
@@ -71,6 +74,15 @@ function Tab({ to, end, label, icon: Icon, primary }: TabDef) {
 
 export default function App() {
   useItemEvents();
+  const qc = useQueryClient();
+  useEffect(() => {
+    const sync = async () => {
+      if (await flushQueue()) qc.invalidateQueries({ queryKey: ["items"] });
+    };
+    sync();
+    window.addEventListener("online", sync);
+    return () => window.removeEventListener("online", sync);
+  }, [qc]);
   return (
     <div className="mx-auto flex min-h-dvh max-w-[720px] flex-col">
       <div className="app-bg" aria-hidden />
