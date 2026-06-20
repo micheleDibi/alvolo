@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -199,6 +200,34 @@ export function useInfiniteItems(query: ItemQuery = {}) {
 
 export function useMeta() {
   return useQuery({ queryKey: ["meta"], queryFn: fetchMeta, staleTime: 10_000 });
+}
+
+/**
+ * Live updates via Server-Sent Events: invalidate the relevant queries when the
+ * server pushes an item change. The client-side polling stays as a fallback.
+ * EventSource can't send headers, so the token rides in the query string.
+ */
+export function useItemEvents() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const token = getToken();
+    const url = `/api/events${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+    const es = new EventSource(url);
+    es.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type === "item") {
+          qc.invalidateQueries({ queryKey: ["items"] });
+          qc.invalidateQueries({ queryKey: ["meta"] });
+          if (d.id) qc.invalidateQueries({ queryKey: ["item", d.id] });
+        }
+      } catch {
+        /* ignore malformed events */
+      }
+    };
+    // EventSource auto-reconnects on error; nothing to do here.
+    return () => es.close();
+  }, [qc]);
 }
 
 export function useItem(id: string) {

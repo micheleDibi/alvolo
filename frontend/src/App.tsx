@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
+import { useItemEvents } from "./api";
 import Inbox from "./pages/Inbox";
 import ItemDetail from "./pages/ItemDetail";
 import Capture from "./pages/Capture";
@@ -69,6 +70,7 @@ function Tab({ to, end, label, icon: Icon, primary }: TabDef) {
 }
 
 export default function App() {
+  useItemEvents();
   return (
     <div className="mx-auto flex min-h-dvh max-w-[720px] flex-col">
       <div className="app-bg" aria-hidden />

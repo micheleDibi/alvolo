@@ -20,7 +20,7 @@ from ..config import settings
 from ..db import get_session
 from ..models import ContentType, Item, ItemStatus, new_id
 from ..schemas import CaptureResponse
-from .. import storage
+from .. import events, storage
 
 router = APIRouter(prefix="/api", tags=["capture"])
 
@@ -171,5 +171,6 @@ async def capture(
     )
     session.add(item)
     await session.commit()
+    events.publish_item(item.id, item.status)
 
     return CaptureResponse(id=item.id, status=ItemStatus.CAPTURING, content_type=content_type)

@@ -22,6 +22,7 @@ from sqlmodel import select
 
 from ..config import settings
 from ..db import SessionFactory
+from ..events import publish_item
 from ..models import Item, ItemStatus, utcnow
 from ..schemas import EnrichmentResult, dumps_list
 from . import claude
@@ -191,6 +192,7 @@ class Worker:
             item.updated_at = now
             session.add(item)
             await session.commit()
+            publish_item(item.id, item.status)
             logger.info("enriched %s (%s) via %s", item_id, item.content_type, model)
 
     async def _fail_or_retry(
@@ -217,6 +219,7 @@ class Worker:
             logger.warning("failed %s: %s", item.id, message)
         session.add(item)
         await session.commit()
+        publish_item(item.id, item.status)
 
 
 # Module-level singleton used by the FastAPI lifespan.
