@@ -5,13 +5,13 @@ import {
   Inbox as InboxIcon,
   Plus,
   Settings as SettingsIcon,
-  Plane,
   Sparkles,
 } from "lucide-react";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { useItemEvents } from "./api";
 import { flushQueue } from "./lib/offlineQueue";
+import BrandMark from "./components/BrandMark";
 import Inbox from "./pages/Inbox";
 import ItemDetail from "./pages/ItemDetail";
 import Capture from "./pages/Capture";
@@ -89,7 +89,7 @@ export default function App() {
 
       <header className="glass sticky top-0 z-10 flex items-center gap-2.5 border-b border-border px-4 pb-3 pt-safe">
         <span className="grid h-8 w-8 place-items-center rounded-xl bg-aurora text-white glow">
-          <Plane className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden />
+          <BrandMark className="h-5 w-5" />
         </span>
         <span className="font-display text-xl font-bold tracking-tight text-gradient">
           AlVolo
